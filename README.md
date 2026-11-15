@@ -29,3 +29,10 @@ fn main() -> Result<(), DecodeError> {
 Each message family has an enum (`ServerRequest`, `ServerResponse`, `PeerMessage`,
 `DistributedMessage`, `InitMessage`) whose `encode` writes a whole frame and whose `decode` takes
 one. Decoders enforce the sizes in `Limits` and log through `tracing`.
+
+## License
+
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT)
+at your option. Unless you explicitly state otherwise, any contribution you submit for inclusion
+in this crate, as defined in the Apache-2.0 license, is dual licensed as above, without any
+additional terms or conditions.

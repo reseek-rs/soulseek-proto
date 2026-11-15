@@ -5,6 +5,7 @@ version = "0.1.0"
 edition = "2024"
 # the library's; its tests need 1.88, the oldest Rust proptest builds with
 rust-version = "1.85"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/reseek-rs/soulseek-proto"
 readme = "README.md"
 keywords = ["soulseek", "protocol", "p2p", "codec", "file-sharing"]
