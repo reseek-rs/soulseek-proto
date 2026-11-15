@@ -110,7 +110,7 @@ pub enum FileAttributeType {
   SampleRate,
   /// bits
   BitDepth,
-  /// any other type, kept so the attribute list re-encodes unchanged
+  /// any other type
   Unknown(u32),
 }
 

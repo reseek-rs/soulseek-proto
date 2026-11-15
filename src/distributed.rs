@@ -33,8 +33,8 @@ family! {
   }
 }
 
-/// Distributed code 0: a keep-alive between a parent and a child. Deprecated: empty in the protocol
-/// reference, though some clients reply with a `u32` token.
+/// Distributed code 0: a keep-alive between a parent and a child. Deprecated: defined as empty,
+/// though some clients reply with a `u32` token.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Ping {

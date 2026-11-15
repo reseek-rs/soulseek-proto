@@ -1,6 +1,6 @@
 //! The message code catalog of every connection kind. A code being listed here does not mean
-//! it has a codec: some peer codes are named by the protocol reference without a layout, and the
-//! decoders treat those like unknown codes.
+//! it has a codec: some peer codes have a known name but no known layout, and the decoders
+//! treat those like unknown codes.
 
 macro_rules! codes {
   ($(#[$meta:meta])* $name:ident: $repr:ty { $($variant:ident = $value:literal,)* }) => {

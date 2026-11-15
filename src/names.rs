@@ -78,8 +78,7 @@ pub fn validate_room_name(room: &str) -> Result<(), RoomNameError> {
   Ok(())
 }
 
-/// The rule for usernames peers send in `PeerInit` and `BranchRoot`: non-empty, at most 256
-/// bytes, no control characters, not `server`
+/// The rule for usernames peers send in `PeerInit` and `BranchRoot`
 pub(crate) fn is_valid_peer_username(username: &str) -> bool {
   !username.is_empty()
     && username.len() <= 256

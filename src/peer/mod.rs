@@ -48,7 +48,6 @@ family! {
       TransferResponse(TransferResponse),
       /// obsolete
       UploadPlacehold(UploadPlacehold),
-      /// asks the peer to queue a file for us
       QueueDownload(QueueDownload),
       PlaceInQueueResponse(PlaceInQueueResponse),
       UploadFailed(UploadFailed),

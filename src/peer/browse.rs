@@ -23,7 +23,7 @@ wire_struct! {
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct File {
-  /// written as 1 by the daemon, kept as received otherwise
+  /// kept as received and written back unchanged
   pub code: u8,
   pub filename: RemoteFilename,
   #[cfg_attr(test, proptest(strategy = "crate::proptests::file_size()"))]
