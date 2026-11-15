@@ -71,7 +71,7 @@ pub enum LoginResponse {
     greeting: String,
     /// Address of the client as the server sees it.
     ip: Ipv4Addr,
-    /// MD5 hash of the password the client sent, for information only.
+    /// MD5 digest sent by the server, for information only.
     hash: Secret,
     /// Whether the client's account has ever bought privileges.
     is_supporter: bool,

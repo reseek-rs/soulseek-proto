@@ -324,6 +324,11 @@ macro_rules! family {
       /// Encodes the message as a complete frame.
       ///
       /// The frame includes the length prefix.
+      ///
+      /// # Panics
+      ///
+      /// Panics if the frame, one of its strings or one of its lists is longer than `u32::MAX`
+      /// bytes or elements.
       pub fn encode(&self) -> Vec<u8> {
         let mut w = $crate::wire::Writer::frame($crate::frame::FrameKind::$kind, self.code().code());
         match self {

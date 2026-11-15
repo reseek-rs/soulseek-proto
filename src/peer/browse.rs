@@ -146,7 +146,7 @@ impl Wire for File {
   }
 }
 
-/// Soulseek NS writes sizes over 2 GiB sign-extended from 32 bits; those are taken as the low
+/// Soulseek NS writes sizes over 2 GiB with the high 32 bits all set; those are taken as the low
 /// 32 bits
 fn fix_file_size(size: u64) -> u64 {
   if size >> 32 == 0xffff_ffff {

@@ -32,7 +32,7 @@ impl Wire for TransferRequest {
     let direction = TransferDirection::read(r, "direction")?;
     let token = r.u32("token")?;
     let filename = r.filename("filename")?;
-    // a download request from an older client may carry a stray size of 0; it is ignored
+    // some clients write a size on a download request too; it is ignored
     let file_size = match direction {
       TransferDirection::Upload => r.optional_fixed("file_size")?,
       TransferDirection::Download => None,
@@ -71,8 +71,8 @@ pub enum TransferResponse {
     token: u32,
     /// Size of the file.
     ///
-    /// Present in the deprecated reply to a download request, absent in the reply to an upload
-    /// announcement.
+    /// Present in the deprecated reply to a download request. In the reply to an upload
+    /// announcement, some clients send it and others leave it out.
     file_size: Option<u64>,
   },
   /// The transfer does not start now.

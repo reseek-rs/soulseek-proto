@@ -41,7 +41,7 @@ pub(crate) fn decoded(family: &'static str, code: u32, kind: &'static str, field
 }
 
 /// At debug: an unknown code is expected (new server features appear without notice), a bad
-/// distributed search identifier is a known peer bug, and other malformed input comes from a
+/// distributed search identifier is expected from some peers, and other malformed input comes from a
 /// remote side the operator cannot act on. A caller for which a frame it drops matters says so
 /// where it drops it.
 pub(crate) fn rejected(

@@ -216,9 +216,10 @@ impl Wire for Embedded {
   }
 }
 
-/// Wrapped distributed message from an old SoulseekQt parent.
+/// Wrapped distributed message from an old parent.
 ///
-/// Distributed code 93. Sent by parents running a SoulseekQt version from before early 2026.
+/// Distributed code 93. Sent by parents running a SoulseekQt version from before early 2026, or
+/// an old version of another client that copied its behaviour.
 ///
 /// Deprecated.
 #[derive(Clone, Debug, PartialEq, Eq)]

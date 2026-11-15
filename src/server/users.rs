@@ -14,7 +14,7 @@ use crate::wire::{Reader, Writer};
 /// User statistics tuple.
 ///
 /// Carried by [`WatchUserResponse`], [`UserStatistics`] and the room messages. On the wire
-/// `upload_count` is followed by a `u32` that is always 0; it is written as 0 and not kept.
+/// `upload_count` is followed by a `u32` of unknown meaning; it is written as 0 and not kept.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserStats {
