@@ -53,7 +53,7 @@ pub const LIMIT_USER_INFO_PICTURE_BYTES: usize = 16 << 20;
 ///
 /// The count is the total over the response. This is the default of
 /// [`Limits::files_per_response`].
-pub const LIMIT_FILES_PER_RESPONSE: usize = 2_000_000;
+pub const LIMIT_FILES_PER_RESPONSE: usize = 5_000_000;
 /// Maximum number of files in one search response.
 ///
 /// The count is the total over the response, locked files included. Any peer that saw the search
@@ -62,7 +62,7 @@ pub const LIMIT_FILES_PER_SEARCH_RESPONSE: usize = 10_000;
 /// Maximum number of directories in one response.
 ///
 /// The count is the total over one browse or folder response.
-pub const LIMIT_DIRECTORIES_PER_RESPONSE: usize = 1_000_000;
+pub const LIMIT_DIRECTORIES_PER_RESPONSE: usize = 4_000_000;
 /// Maximum `n_attributes` of one file.
 pub const LIMIT_ATTRIBUTES_PER_FILE: usize = 64;
 
