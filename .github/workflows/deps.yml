@@ -1,6 +1,7 @@
-# turns on github's auto-merge for a dependabot pull request, which then merges once the checks
-# the branch ruleset requires (ci.yml) pass. no pull request code runs here. action bumps are left
-# for review, since an action's code runs where publish.yml holds the crates.io token
+# turns on github's auto-merge for a dependabot cargo pull request, which then merges once the
+# checks the branch ruleset requires (ci.yml) pass. no pull request code runs here. action and
+# flake input bumps are left for review, since an action's code and the flake's toolchain run
+# where publish.yml holds the crates.io token
 name: deps
 
 on: pull_request
@@ -11,7 +12,7 @@ jobs:
   auto-merge:
     if: >-
       github.actor == 'dependabot[bot]'
-      && !startsWith(github.head_ref, 'dependabot/github_actions/')
+      && startsWith(github.head_ref, 'dependabot/cargo/')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -21,5 +22,4 @@ jobs:
       - uses: fastify/github-action-merge-dependabot@73ec4cbb5e56df5591eae286972d5b2201ffe90f # v3.15.0
         with:
           use-github-auto-merge: true
-          # a flake input bump has no semver update type, which any target but `any` skips
-          target: ${{ startsWith(github.head_ref, 'dependabot/cargo/') && 'minor' || 'any' }}
+          target: minor
