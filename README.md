@@ -17,7 +17,7 @@ caller. A client built on this crate is
 
 ```toml
 [dependencies]
-soulseek-proto = "0.2"
+soulseek-proto = "0.3"
 ```
 
 ```rust
