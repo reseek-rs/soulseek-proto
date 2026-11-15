@@ -76,14 +76,13 @@ pub struct GetPeerAddressResponse {
   /// `0.0.0.0` when the user is offline
   pub ip: Ipv4Addr,
   pub port: u32,
-  /// absent from older servers; never dialed
+  /// absent from older servers
   pub obfuscation: Option<PeerAddressObfuscation>,
 }
 
 wire_struct! {
   /// The obfuscated port trailer of `GetPeerAddressResponse`, where the port is two bytes. Type 0
-  /// is none and 1 is "rotated"; this client never advertises one and never dials the obfuscated
-  /// port.
+  /// is none and 1 is "rotated".
   pub struct PeerAddressObfuscation {
     pub obfuscation_type: u32,
     pub obfuscated_port: u16,

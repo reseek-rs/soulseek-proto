@@ -72,8 +72,7 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 149: one private message to each listed online user. Codec only: this client never
-  /// sends it.
+  /// Server code 149: one private message to each listed online user.
   pub struct MessageUsers {
     pub usernames: Vec<String>,
     pub message: String,

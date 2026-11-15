@@ -125,13 +125,13 @@ impl Wire for LoginResponse {
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct SetListenPort {
   pub port: u32,
-  /// never sent by this client
+  /// omitted from the frame when `None`
   pub obfuscation: Option<Obfuscation>,
 }
 
 wire_struct! {
   /// The obfuscated port trailer of `SetListenPort` and `ConnectToPeerResponse`. Type 0 is none
-  /// and 1 is "rotated"; this client never advertises one and never dials the obfuscated port.
+  /// and 1 is "rotated".
   pub struct Obfuscation {
     pub obfuscation_type: u32,
     pub obfuscated_port: u32,
