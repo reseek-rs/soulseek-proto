@@ -1,0 +1,12 @@
+/target/
+
+# cargo-fuzz output, and the lockfile `just fuzz-lock` copies from ../Cargo.lock
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+/fuzz/coverage/
+/fuzz/Cargo.lock
+
+# nix
+result
+result-*

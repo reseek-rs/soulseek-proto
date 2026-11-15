@@ -1,19 +1,28 @@
 [package]
 name = "soulseek-proto"
 description = "Soulseek protocol codecs and data model"
-version.workspace = true
-edition.workspace = true
-publish.workspace = true
+version = "0.1.0"
+edition = "2024"
+# the library's; its tests need 1.88, the oldest Rust proptest builds with
+rust-version = "1.85"
+repository = "https://github.com/reseek-rs/soulseek-proto"
+readme = "README.md"
+keywords = ["soulseek", "protocol", "p2p", "codec", "file-sharing"]
+categories = ["network-programming", "encoding", "parser-implementations"]
+include = ["/src/", "/README.md", "/LICENSE*"]
 
 [dependencies]
-flate2.workspace = true
-md-5.workspace = true
-thiserror.workspace = true
-tracing.workspace = true
+flate2 = "1"
+md-5 = "0.11"
+thiserror = "2"
+tracing = "0.1"
 
 [dev-dependencies]
-proptest.workspace = true
-proptest-derive.workspace = true
+proptest = "1"
+proptest-derive = "0.9"
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
