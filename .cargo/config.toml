@@ -1,0 +1,4 @@
+# the strategy proptest derives for a family enum is one value holding a strategy per message,
+# and in an unoptimized build ServerResponse's takes more than the 2 MiB a test thread gets
+[env]
+RUST_MIN_STACK = "8388608"
