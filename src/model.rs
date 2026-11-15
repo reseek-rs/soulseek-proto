@@ -2,6 +2,8 @@
 //!
 //! Enumerations carried by messages, and the parsing of a free-text search query.
 
+use std::collections::HashSet;
+
 use crate::error::FieldError;
 
 /// Online state of a user.
@@ -160,7 +162,7 @@ pub struct SearchQuery {
   pub terms: Vec<String>,
   /// Exclusions, without their leading `-` characters.
   ///
-  /// Duplicates are removed. Matched case-insensitively.
+  /// Exact duplicates are removed. Matched case-insensitively.
   pub exclusions: Vec<String>,
 }
 
@@ -173,10 +175,11 @@ impl SearchQuery {
   /// a term.
   pub fn parse(text: &str) -> Self {
     let mut query = Self::default();
+    let mut seen = HashSet::new();
     for token in text.split_whitespace() {
       if token.len() > 1 && token.starts_with('-') {
         let exclusion = token.trim_start_matches('-');
-        if !query.exclusions.iter().any(|e| e == exclusion) {
+        if seen.insert(exclusion) {
           query.exclusions.push(exclusion.to_owned());
         }
       } else {
