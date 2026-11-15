@@ -338,7 +338,7 @@ fn vector_names_are_unique_per_target() {
 #[test]
 #[ignore = "writes the fuzz seed corpus; run by `just fuzz-seed`"]
 fn write_fuzz_corpus() {
-  let corpus = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fuzz/corpus");
+  let corpus = Path::new(env!("CARGO_MANIFEST_DIR")).join("fuzz/corpus");
   let write = |target: &str, name: &str, bytes: &[u8]| {
     let dir = corpus.join(target);
     std::fs::create_dir_all(&dir).unwrap();
