@@ -5,12 +5,20 @@
 [![ci](https://github.com/reseek-rs/soulseek-proto/actions/workflows/ci.yml/badge.svg)](https://github.com/reseek-rs/soulseek-proto/actions/workflows/ci.yml)
 [![license](https://img.shields.io/crates/l/soulseek-proto)](#license)
 
-The Soulseek wire protocol as Rust types: every server, peer, distributed and peer-init message
-with its encoder and decoder, the frame codec, decode limits and the data model.
+An implementation of the Soulseek wire protocol as Rust types: every server, peer, distributed and
+peer-init message with its encoder and decoder, the frame codec, decode limits and the data model.
 
-It does no I/O and has no async runtime or opinion about what a client does with a message. Bytes
-go in and messages come out, and the other way round. For a client that connects, logs in, searches
-and transfers, see [`soulseek-client`](https://github.com/reseek-rs/soulseek-client).
+The crate performs no I/O and has no async runtime. Bytes are decoded into messages and messages
+are encoded into bytes; connection handling, login, search and transfer logic are left to the
+caller. A client built on this crate is
+[`soulseek-client`](https://github.com/reseek-rs/soulseek-client).
+
+## Usage
+
+```toml
+[dependencies]
+soulseek-proto = "0.1"
+```
 
 ```rust
 use soulseek_proto::frame::{self, FrameKind};
@@ -21,8 +29,8 @@ fn main() -> Result<(), DecodeError> {
   let request = ServerRequest::SetListenPort(SetListenPort { port: 2234, obfuscation: None });
   let bytes = request.encode();
 
-  // a socket hands over bytes in pieces: split takes one complete frame off the front, or
-  // returns None until one has arrived
+  // a socket delivers bytes in pieces: `split` takes one complete frame off the front of the
+  // buffer, or returns `None` until a whole frame has arrived
   let (frame, consumed) = frame::split(FrameKind::Server, &bytes, &Limits::DEFAULT)?
     .expect("the buffer holds a whole frame");
   assert_eq!(frame.code, 2);
@@ -31,9 +39,19 @@ fn main() -> Result<(), DecodeError> {
 }
 ```
 
-Each message family has an enum (`ServerRequest`, `ServerResponse`, `PeerMessage`,
-`DistributedMessage`, `InitMessage`) whose `encode` writes a whole frame and whose `decode` takes
-one. Decoders enforce the sizes in `Limits` and log through `tracing`.
+## Message families
+
+Each connection type has an enum of its messages. `encode` writes one complete frame, and
+`decode` reads exactly one.
+
+| Enum                              | Connection                                               |
+| --------------------------------- | -------------------------------------------------------- |
+| `ServerRequest`, `ServerResponse` | Client to server, and server to client                   |
+| `PeerMessage`                     | Peer (`P`) connections between two clients               |
+| `DistributedMessage`              | Distributed (`D`) connections in the search tree         |
+| `InitMessage`                     | The first frame on an inbound `P`, `F` or `D` connection |
+
+Decoders enforce the sizes in `Limits` and log through `tracing`.
 
 ## License
 

@@ -1,6 +1,6 @@
 [package]
 name = "soulseek-proto"
-description = "Soulseek protocol codecs and data model"
+description = "The Soulseek wire protocol: message codecs, framing and data model"
 version = "0.1.0"
 edition = "2024"
 # the library's; its tests need 1.88, the oldest Rust proptest builds with
