@@ -1,62 +1,87 @@
-//! Hostile-input limits. Each one is enforced where the decoder reads the field it bounds;
-//! exceeding one is a [`DecodeError`](crate::DecodeError). The bound on a peer message's frame
-//! length by its code, [`Limits::peer_message_bytes`], is for a reader to skip a frame from its
-//! header without reading it in.
+//! Limits on hostile input.
+//!
+//! Each limit is enforced where the decoder reads the field it bounds, and exceeding one is a
+//! [`DecodeError`](crate::DecodeError). [`Limits::peer_message_bytes`], the bound on a peer
+//! message's frame length by its code, allows a reader to skip a frame based on its header,
+//! without reading the frame in.
 
 use crate::codes::PeerCode;
 use crate::frame::FrameKind;
 
-/// frame `len` on the server connection
+/// Maximum frame `len` on the server connection, in bytes.
 pub const LIMIT_SERVER_MESSAGE_BYTES: u32 = 64 << 20;
-/// frame `len` of a browse response, the one peer message a large share makes large; the
-/// default of [`Limits::browse_message_bytes`]
+/// Maximum frame `len` of a browse response, in bytes.
+///
+/// The browse response is the one peer message that a large share makes large. This is the
+/// default of [`Limits::browse_message_bytes`].
 pub const LIMIT_BROWSE_MESSAGE_BYTES: u32 = 256 << 20;
-/// frame `len` of a peer message made of a few integers and strings, which is every one but the
-/// compressed responses and the user info
+/// Maximum frame `len` of a small peer message, in bytes.
+///
+/// A small peer message is made of a few integers and strings. Every peer message is of this kind
+/// except the compressed responses and the user info.
 pub const LIMIT_PEER_SMALL_MESSAGE_BYTES: u32 = 256 << 10;
-/// frame `len` on distributed connections
+/// Maximum frame `len` on distributed connections, in bytes.
 pub const LIMIT_DISTRIBUTED_MESSAGE_BYTES: u32 = 64 << 10;
-/// the first frame on an inbound socket
+/// Maximum `len` of the first frame on an inbound socket, in bytes.
 pub const LIMIT_INIT_MESSAGE_BYTES: u32 = 4 << 10;
-/// decompressed size of a browse response; the default of [`Limits::inflated_browse_bytes`]
+/// Maximum decompressed size of a browse response, in bytes.
+///
+/// This is the default of [`Limits::inflated_browse_bytes`].
 pub const LIMIT_INFLATED_BROWSE_BYTES: usize = 1 << 30;
-/// decompressed size of a folder contents response; the default of
-/// [`Limits::inflated_folder_bytes`]
+/// Maximum decompressed size of a folder contents response, in bytes.
+///
+/// This is the default of [`Limits::inflated_folder_bytes`].
 pub const LIMIT_INFLATED_FOLDER_BYTES: usize = 128 << 20;
-/// decompressed size of a search response, which any peer that saw the search can send; the
-/// default of [`Limits::inflated_search_bytes`]
+/// Maximum decompressed size of a search response, in bytes.
+///
+/// Any peer that saw the search can send a search response. This is the default of
+/// [`Limits::inflated_search_bytes`].
 pub const LIMIT_INFLATED_SEARCH_BYTES: usize = 16 << 20;
-/// any single string, chat messages included, except the two below
+/// Maximum length of a single string, in bytes.
+///
+/// Applies to every string, chat messages included, except the user-info description and the
+/// login greeting, which [`LIMIT_DESCRIPTION_BYTES`] bounds.
 pub const LIMIT_STRING_BYTES: usize = 64 << 10;
-/// the user-info description and the login greeting
+/// Maximum length of a description or greeting, in bytes.
+///
+/// Applies to the user-info description and the login greeting.
 pub const LIMIT_DESCRIPTION_BYTES: usize = 256 << 10;
-/// `InfoResponse` picture length
+/// Maximum length of the picture in an
+/// [`InfoResponse`](crate::PeerMessage::InfoResponse), in bytes.
 pub const LIMIT_USER_INFO_PICTURE_BYTES: usize = 16 << 20;
-/// total files in one browse, search or folder response; the default of
-/// [`Limits::files_per_response`]
+/// Maximum number of files in one response.
+///
+/// The count is the total over one browse, search or folder response. This is the default of
+/// [`Limits::files_per_response`].
 pub const LIMIT_FILES_PER_RESPONSE: usize = 10_000_000;
-/// total directories in one browse or folder response
+/// Maximum number of directories in one response.
+///
+/// The count is the total over one browse or folder response.
 pub const LIMIT_DIRECTORIES_PER_RESPONSE: usize = 1_000_000;
-/// `n_attributes` of one file
+/// Maximum `n_attributes` of one file.
 pub const LIMIT_ATTRIBUTES_PER_FILE: usize = 64;
 
-/// The limits an operator can configure. Everything else is a constant.
+/// Limits that an operator can configure.
+///
+/// Every other limit is a constant.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Limits {
-  /// frame `len` of a browse response
+  /// Maximum frame `len` of a browse response, in bytes.
   pub browse_message_bytes: u32,
-  /// decompressed size of a browse response
+  /// Maximum decompressed size of a browse response, in bytes.
   pub inflated_browse_bytes: usize,
-  /// decompressed size of a folder contents response
+  /// Maximum decompressed size of a folder contents response, in bytes.
   pub inflated_folder_bytes: usize,
-  /// decompressed size of a search response
+  /// Maximum decompressed size of a search response, in bytes.
   pub inflated_search_bytes: usize,
-  /// total files in one browse, search or folder response
+  /// Maximum number of files in one response.
+  ///
+  /// The count is the total over one browse, search or folder response.
   pub files_per_response: usize,
 }
 
 impl Limits {
-  /// the `LIMIT_*` constant of each field
+  /// Limits with each field set to its `LIMIT_*` constant.
   pub const DEFAULT: Self = Self {
     browse_message_bytes: LIMIT_BROWSE_MESSAGE_BYTES,
     inflated_browse_bytes: LIMIT_INFLATED_BROWSE_BYTES,
@@ -65,7 +90,7 @@ impl Limits {
     files_per_response: LIMIT_FILES_PER_RESPONSE,
   };
 
-  /// largest frame `len` accepted on a connection of this kind
+  /// Returns the largest accepted frame `len` for `kind`, in bytes.
   pub fn frame_bytes(&self, kind: FrameKind) -> u32 {
     match kind {
       FrameKind::Server => LIMIT_SERVER_MESSAGE_BYTES,
@@ -84,7 +109,9 @@ impl Limits {
     }
   }
 
-  /// the decompressed size a peer message of `code` may reach, `None` for one not compressed
+  /// Returns the largest decompressed size for `code`, in bytes.
+  ///
+  /// Returns `None` for a message that is not compressed.
   pub fn inflated_bytes(&self, code: PeerCode) -> Option<usize> {
     match code {
       PeerCode::BrowseResponse => Some(self.inflated_browse_bytes),
@@ -94,9 +121,11 @@ impl Limits {
     }
   }
 
-  /// The longest frame `len` a peer message of `code` may have: the browse limit for a browse
-  /// response, room for the inflate limit of the other compressed ones, room for the longest
-  /// description and picture in user info, and the small-message limit for the rest
+  /// Returns the longest frame `len` for `code`, in bytes.
+  ///
+  /// The bound is the browse limit for a browse response, room for the inflate limit for the
+  /// other compressed responses, room for the longest description and picture for the user info,
+  /// and the small-message limit for every other message.
   pub fn peer_message_bytes(&self, code: PeerCode) -> u32 {
     let payload = match code {
       PeerCode::BrowseResponse => return self.browse_message_bytes,

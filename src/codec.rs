@@ -1,5 +1,7 @@
-//! The read/write pair every message and every field type implements, and the two macros the
-//! family modules build their messages and enums from.
+//! Read and write pair of every message and field type.
+//!
+//! The module also defines the two macros from which the family modules build their messages
+//! and enums.
 
 use std::net::Ipv4Addr;
 
@@ -312,14 +314,16 @@ macro_rules! family {
     }
 
     impl $name {
-      /// the code this message is sent with
+      /// Returns the code this message is sent with.
       pub fn code(&self) -> $code {
         match self {
           $( $name::$variant $(($crate::codec::family!(@bind $ty, _message)))? => $code::$variant, )*
         }
       }
 
-      /// the complete frame, length prefix included
+      /// Encodes the message as a complete frame.
+      ///
+      /// The frame includes the length prefix.
       pub fn encode(&self) -> Vec<u8> {
         let mut w = $crate::wire::Writer::frame($crate::frame::FrameKind::$kind, self.code().code());
         match self {
@@ -332,7 +336,18 @@ macro_rules! family {
         w.finish()
       }
 
-      /// decodes one complete frame, length prefix included
+      /// Decodes one complete frame, length prefix included.
+      ///
+      /// # Errors
+      ///
+      /// Returns [`DecodeError::FrameTooShort`](crate::DecodeError::FrameTooShort) or
+      /// [`DecodeError::FrameTooLarge`](crate::DecodeError::FrameTooLarge) if the length prefix
+      /// is out of range under [`Limits::DEFAULT`](crate::Limits::DEFAULT),
+      /// [`DecodeError::IncompleteFrame`](crate::DecodeError::IncompleteFrame) if `bytes` ends
+      /// before the frame does, [`DecodeError::TrailingBytes`](crate::DecodeError::TrailingBytes)
+      /// if bytes follow the frame, [`DecodeError::UnknownCode`](crate::DecodeError::UnknownCode)
+      /// if the code has no known layout, and [`DecodeError::Field`](crate::DecodeError::Field)
+      /// if a field cannot be read.
       pub fn decode(bytes: &[u8]) -> Result<Self, $crate::error::DecodeError> {
         Self::decode_limited(bytes, &$crate::limits::Limits::DEFAULT)
       }

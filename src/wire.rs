@@ -1,5 +1,7 @@
-//! Primitive encodings: little-endian integers, length-prefixed strings with the utf-8 to
-//! iso-8859-1 read fallback, reversed ipv4 addresses.
+//! Primitive encodings.
+//!
+//! The primitives are little-endian integers, length-prefixed strings that fall back from UTF-8
+//! to ISO-8859-1 on read, and IPv4 addresses with reversed octets.
 
 use std::fmt;
 use std::net::Ipv4Addr;
@@ -11,8 +13,10 @@ use crate::limits::{
   LIMIT_DESCRIPTION_BYTES, LIMIT_DIRECTORIES_PER_RESPONSE, LIMIT_STRING_BYTES, Limits,
 };
 
-/// A path as a peer sent it. The bytes are what gets echoed back to that peer; `as_str` is for
-/// display and is iso-8859-1 decoded (`is_lossy`) when the bytes are not utf-8.
+/// Path as a peer sent it.
+///
+/// The bytes are what is echoed back to that peer. [`as_str`](Self::as_str) is for display and
+/// is decoded as ISO-8859-1 ([`is_lossy`](Self::is_lossy)) when the bytes are not UTF-8.
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct RemoteFilename {
   bytes: Vec<u8>,
@@ -21,7 +25,9 @@ pub struct RemoteFilename {
 }
 
 impl RemoteFilename {
-  /// keeps the bytes as they are and decodes them for display
+  /// Creates a filename from `bytes`.
+  ///
+  /// The bytes are kept as they are and decoded for display.
   pub fn from_bytes(bytes: Vec<u8>) -> Self {
     let (display, lossy) = decode_text(&bytes);
     Self {
@@ -31,17 +37,23 @@ impl RemoteFilename {
     }
   }
 
-  /// the bytes as the peer sent them, to echo back to it
+  /// Returns the bytes as the peer sent them.
+  ///
+  /// These are the bytes to echo back to the peer.
   pub fn as_bytes(&self) -> &[u8] {
     &self.bytes
   }
 
-  /// the text for display, iso-8859-1 decoded when the bytes are not utf-8
+  /// Returns the text for display.
+  ///
+  /// The text is decoded as ISO-8859-1 when the bytes are not UTF-8.
   pub fn as_str(&self) -> &str {
     &self.display
   }
 
-  /// the bytes were not utf-8 and were decoded as iso-8859-1
+  /// Returns `true` if the bytes were decoded as ISO-8859-1.
+  ///
+  /// The bytes are decoded as ISO-8859-1 when they are not UTF-8.
   pub fn is_lossy(&self) -> bool {
     self.lossy
   }
@@ -75,17 +87,19 @@ impl fmt::Display for RemoteFilename {
   }
 }
 
-/// A password or password hash carried by a message. `Debug` never prints it.
+/// Password or password hash carried by a message.
+///
+/// The `Debug` implementation never prints it.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Secret(String);
 
 impl Secret {
-  /// wraps a password or password hash
+  /// Wraps a password or password hash.
   pub fn new(secret: impl Into<String>) -> Self {
     Self(secret.into())
   }
 
-  /// the secret itself, for writing it to the wire
+  /// Returns the secret itself, for writing it to the wire.
   pub fn expose(&self) -> &str {
     &self.0
   }

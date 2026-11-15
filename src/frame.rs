@@ -1,25 +1,31 @@
-//! Framing: `[u32 len][code][payload]`, where the code is 4 bytes on server and peer connections
-//! and 1 byte on distributed connections and in the init frame.
+//! Message framing.
+//!
+//! A frame is `[u32 len][code][payload]`. The code is 4 bytes on server and peer connections and
+//! 1 byte on distributed connections and in the init frame.
 
 use crate::error::DecodeError;
 use crate::limits::Limits;
 
-/// Which code width and length limit apply to a frame. A transfer (`F`) socket carries only its
-/// init frame; the raw token and offset after it are in [`crate::init`].
+/// Selector for a frame's code width and length limit.
+///
+/// A transfer (`F`) socket carries only its init frame. The raw token and offset that follow it
+/// are covered in [`crate::init`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum FrameKind {
-  /// the server connection
+  /// The server connection.
   Server,
-  /// a `P` connection between two clients
+  /// A `P` connection between two clients.
   Peer,
-  /// a `D` connection in the distributed search tree
+  /// A `D` connection in the distributed search tree.
   Distributed,
-  /// the first frame on an inbound `P`, `F` or `D` socket
+  /// The first frame on an inbound `P`, `F` or `D` socket.
   Init,
 }
 
 impl FrameKind {
-  /// bytes of the message code that follow the length prefix
+  /// Returns the width of the message code, in bytes.
+  ///
+  /// The message code follows the length prefix.
   pub fn code_width(self) -> usize {
     match self {
       Self::Server | Self::Peer => 4,
@@ -28,24 +34,35 @@ impl FrameKind {
   }
 }
 
-/// `len` counts the code and the payload, not the 4-byte prefix
+/// Length prefix and message code of a frame.
+///
+/// `len` counts the code and the payload, not the 4-byte prefix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FrameHeader {
   pub len: u32,
   pub code: u32,
 }
 
-/// One frame's code and payload, borrowed from the buffer it was split from
+/// Code and payload of one frame.
+///
+/// The payload is borrowed from the buffer the frame was split from.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Frame<'a> {
   pub code: u32,
   pub payload: &'a [u8],
 }
 
-/// Reads the length and code as soon as they are buffered, before the payload arrives.
-/// `Ok(None)` means more bytes are needed. A length below the code width or above the limit is
-/// an error and the connection should be closed; the caller logs it, since a peer can send such
-/// lengths as often as it likes.
+/// Reads the length and code of a frame.
+///
+/// The length and code are read as soon as they are buffered, before the payload arrives.
+/// Returns `Ok(None)` if more bytes are needed.
+///
+/// # Errors
+///
+/// Returns [`DecodeError::FrameTooShort`] if the length is below the code width of `kind`, and
+/// [`DecodeError::FrameTooLarge`] if it is above the limit [`Limits::frame_bytes`] gives for
+/// `kind`. In both cases the connection should be closed. The caller is responsible for logging
+/// the error, since a peer can send such lengths as often as it likes.
 pub fn header(
   kind: FrameKind,
   buf: &[u8],
@@ -73,8 +90,13 @@ pub fn header(
   Ok(Some(FrameHeader { len, code }))
 }
 
-/// Splits the first complete frame off `buf`, returning it with the number of bytes it took.
-/// `Ok(None)` means more bytes are needed.
+/// Splits the first complete frame off `buf`.
+///
+/// Returns the frame with the number of bytes it took, or `Ok(None)` if more bytes are needed.
+///
+/// # Errors
+///
+/// Returns the errors of [`header`] for a frame length out of range.
 pub fn split<'a>(
   kind: FrameKind,
   buf: &'a [u8],

@@ -1,15 +1,30 @@
-//! The Soulseek wire protocol: framing, codecs for every server, peer, init and distributed
-//! message, the compressed payloads and the data model. No I/O and no async; a client that
-//! connects and talks to the network is `soulseek-client`.
+//! The Soulseek wire protocol as Rust types.
 //!
-//! One module per message family: [`server`], [`peer`], [`distributed`] and [`init`]. Each
-//! message is a struct, in the file of its topic for the larger families and reached through its
-//! family module, whose wire layout is read and written in one place;
-//! the family enum (`ServerRequest`, `PeerMessage`, ...) ties every variant to its code and has
-//! `encode(&self) -> Vec<u8>`, which produces a complete frame, and `decode(&[u8])`, which takes
-//! exactly one complete frame as [`frame::split`] returns it. Decoders enforce [`Limits`] and log
-//! what they decode and what they reject at `debug`, and a partial frame or bytes past one frame
-//! at `warn`. A frame length out of range is returned unlogged for the caller to log.
+//! The crate provides framing, codecs for every server, peer, init and distributed message, the
+//! compressed payloads and the data model. It performs no I/O and contains no async code. A
+//! client that connects to the network and exchanges messages with it is `soulseek-client`.
+//!
+//! # Messages
+//!
+//! Each message family has one module: [`server`], [`peer`], [`distributed`] and [`init`]. Each
+//! message is a struct whose wire layout is read and written in one place.
+//!
+//! The family enum ([`ServerRequest`], [`PeerMessage`], ...) ties every variant to its code. Its
+//! `encode(&self) -> Vec<u8>` method produces a complete frame, length prefix included. Its
+//! `decode(&[u8])` method takes exactly one complete frame, length prefix included: the bytes
+//! [`frame::split`] reports as consumed.
+//!
+//! # Decoding
+//!
+//! `decode` enforces [`Limits::DEFAULT`]. [`PeerMessage::decode_with`],
+//! [`peek_search_response`] and [`peek_folder_contents_token`] take the limits as an argument.
+//!
+//! # Logging
+//!
+//! Decoders log rejected messages at the `debug` level, and decoded messages at the `debug`
+//! level except distributed pings, distributed searches and embedded messages, which are too
+//! frequent to log. A partial frame or bytes past one frame are logged at the `warn` level. A
+//! frame length out of range is returned without being logged, and is left to the caller to log.
 
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
