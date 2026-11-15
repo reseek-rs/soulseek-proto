@@ -1,14 +1,20 @@
 //! The Soulseek wire protocol: framing, codecs for every server, peer, init and distributed
-//! message, the compressed payloads and the data model. No I/O.
+//! message, the compressed payloads and the data model. No I/O and no async; a client that
+//! connects and talks to the network is `soulseek-client`.
 //!
 //! One module per message family: [`server`], [`peer`], [`distributed`] and [`init`]. Each
 //! message is a struct, in the file of its topic for the larger families and reached through its
 //! family module, whose wire layout is read and written in one place;
 //! the family enum (`ServerRequest`, `PeerMessage`, ...) ties every variant to its code and has
 //! `encode(&self) -> Vec<u8>`, which produces a complete frame, and `decode(&[u8])`, which takes
-//! exactly one complete frame as [`frame::split`] returns it. Decoders enforce the `LIMIT_*`
-//! constants and log what they decode at `debug` and what they reject at `warn` (unknown codes
-//! at `debug`), so callers do not log decode errors again.
+//! exactly one complete frame as [`frame::split`] returns it. Decoders enforce [`Limits`] and log
+//! what they decode and what they reject at `debug`, and a buffer that is not exactly one frame
+//! at `warn`.
+
+// the README's example compiles as a doc test
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctest;
 
 mod codec;
 mod codes;
