@@ -1,5 +1,7 @@
-//! Session messages: login, the listen port, online status, ping, share counts, being kicked,
-//! upload speed and password changes.
+//! Session messages.
+//!
+//! Login, the listen port, online status, ping, share counts, kicks from the server, upload speed
+//! and password changes.
 
 use std::net::Ipv4Addr;
 
@@ -10,10 +12,14 @@ use crate::error::DecodeError;
 use crate::model::UserPresence;
 use crate::wire::{Reader, Secret, Writer};
 
-/// The major version sent in `Login`. 177 is the number the version registry keeps for
-/// experimental clients; 170 belongs to another client project and must not be reused.
+/// Major version sent in [`LoginRequest`].
+///
+/// The version registry keeps 177 for experimental clients. 170 belongs to another client project
+/// and must not be reused.
 pub const PROTOCOL_MAJOR_VERSION: u32 = 177;
-/// The minor version sent in `Login`; the server only requires it to be non-zero
+/// Minor version sent in [`LoginRequest`].
+///
+/// The server only requires it to be non-zero.
 pub const PROTOCOL_MINOR_VERSION: u32 = 760;
 
 pub(crate) fn login_hash(username: &str, password: &str) -> String {
@@ -24,20 +30,22 @@ pub(crate) fn login_hash(username: &str, password: &str) -> String {
 }
 
 wire_struct! {
-  /// Server code 1: our username, password and client version, the first message on the server
-  /// connection.
+  /// Login request.
+  ///
+  /// Server code 1. Sent by the client as the first message on the server connection, with the
+  /// client's username, password and client version.
   pub struct LoginRequest {
     pub username: String,
     pub password: Secret,
     pub major_version: u32,
-    /// `login_hash` of the username and password
+    /// Lowercase hexadecimal MD5 digest of the username followed by the password.
     pub hash: Secret,
     pub minor_version: u32,
   }
 }
 
 impl LoginRequest {
-  /// a `Login` with the hash computed from the credentials
+  /// Returns a login request with the hash computed from the credentials.
   pub fn new(username: String, password: String, major_version: u32, minor_version: u32) -> Self {
     let hash = Secret::new(login_hash(&username, &password));
     Self {
@@ -50,25 +58,27 @@ impl LoginRequest {
   }
 }
 
-/// Server code 1: the server accepts the login with a greeting and our public address, or rejects
-/// it with a reason.
+/// Acceptance or rejection of a login.
+///
+/// Server code 1. Sent by the server. An acceptance carries a greeting and the client's public
+/// address, a rejection carries a reason.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum LoginResponse {
-  /// the login was accepted
+  /// The login was accepted.
   Success {
-    /// the server's multi-line greeting
+    /// Multi-line greeting from the server.
     greeting: String,
-    /// our address as the server sees it
+    /// Address of the client as the server sees it.
     ip: Ipv4Addr,
-    /// md5 of the password we sent, informational
+    /// MD5 hash of the password the client sent, for information only.
     hash: Secret,
-    /// has ever bought privileges
+    /// Whether the client's account has ever bought privileges.
     is_supporter: bool,
   },
-  /// the login was rejected
+  /// The login was rejected.
   Failure {
-    /// `INVALIDUSERNAME`, `INVALIDPASS`, `SVRFULL`, ...
+    /// Reason for the rejection, such as `INVALIDUSERNAME`, `INVALIDPASS` or `SVRFULL`.
     reason: String,
     detail: Option<String>,
   },
@@ -118,18 +128,22 @@ impl Wire for LoginResponse {
   }
 }
 
-/// Server code 2: the port peers can reach us on, sent with the login and whenever it changes.
+/// Port on which peers can reach the client.
+///
+/// Server code 2. Sent by the client with the login and whenever the port changes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct SetListenPort {
   pub port: u32,
-  /// omitted from the frame when `None`
+  /// Omitted from the frame when `None`.
   pub obfuscation: Option<Obfuscation>,
 }
 
 wire_struct! {
-  /// The obfuscated port trailer of `SetListenPort` and `ConnectToPeerResponse`. Type 0 is none
-  /// and 1 is "rotated".
+  /// Obfuscated port trailer.
+  ///
+  /// Ends [`SetListenPort`] and [`ConnectToPeerResponse`](super::ConnectToPeerResponse). Type 0 is
+  /// none and type 1 is "rotated".
   pub struct Obfuscation {
     pub obfuscation_type: u32,
     pub obfuscated_port: u32,
@@ -155,15 +169,18 @@ impl Wire for SetListenPort {
 }
 
 wire_struct! {
-  /// Server code 28: our presence, away or online, sent whenever it changes.
+  /// Presence of the client, away or online.
+  ///
+  /// Server code 28. Sent by the client whenever the presence changes.
   pub struct SetOnlineStatus {
     pub status: UserPresence,
   }
 }
 
 wire_struct! {
-  /// Server code 35: how many folders and files we share, sent after login and after each share
-  /// scan.
+  /// Number of folders and files the client shares.
+  ///
+  /// Server code 35. Sent by the client after login and after each share scan.
   pub struct SharedFoldersAndFiles {
     pub directory_count: u32,
     pub file_count: u32,
@@ -171,16 +188,21 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 121: the average speed of an upload we just finished, which the server folds into
-  /// our statistics.
+  /// Average speed of a finished upload.
+  ///
+  /// Server code 121. Sent by the client when it finishes an upload. The server includes the speed
+  /// in the client's statistics.
   pub struct SendUploadSpeed {
-    /// bytes/second
+    /// Speed in bytes per second.
     pub speed: u32,
   }
 }
 
 wire_struct! {
-  /// Server code 142: a new password for our account; the server echoes it back once it is changed.
+  /// New password for the client's account.
+  ///
+  /// Server code 142. Sent by the client. The server echoes the message back once the password is
+  /// changed.
   pub struct NewPassword {
     pub new_password: Secret,
   }

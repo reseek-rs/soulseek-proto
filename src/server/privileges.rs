@@ -1,38 +1,56 @@
-//! Privileges: who has them, how long ours last, and giving them away.
+//! Privilege messages.
+//!
+//! Which users have privileges, how long the client's privileges last, and giving them away.
 
 use crate::codec::wire_struct;
 
 wire_struct! {
-  /// Server code 69: every privileged user, sent after login.
+  /// Every privileged user.
+  ///
+  /// Server code 69. Sent by the server after login.
   pub struct PrivilegedUsers {
     pub usernames: Vec<String>,
   }
 }
 
 wire_struct! {
-  /// Server code 91: a user became privileged. Obsolete: the live server no longer sends it.
+  /// Notification that a user became privileged.
+  ///
+  /// Server code 91.
+  ///
+  /// Obsolete: the server no longer sends this message.
   pub struct AddPrivilegedUser {
     pub username: String,
   }
 }
 
 wire_struct! {
-  /// Server code 92: how many seconds of privileges we have left, in reply to `CheckPrivileges`.
+  /// Number of seconds of privileges the client has left.
+  ///
+  /// Server code 92. Sent by the server in reply to
+  /// [`CheckPrivileges`](crate::ServerRequest::CheckPrivileges).
   pub struct CheckPrivilegesResponse {
     pub seconds_remaining: u32,
   }
 }
 
 wire_struct! {
-  /// Server code 122: asks whether a user is privileged. Deprecated: `GetStatus` carries the same
-  /// flag.
+  /// Request to know whether a user is privileged.
+  ///
+  /// Server code 122. Sent by the client.
+  ///
+  /// Deprecated: `GetStatus` carries the same flag.
   pub struct UserPrivilegesRequest {
     pub username: String,
   }
 }
 
 wire_struct! {
-  /// Server code 122: whether a user is privileged. Deprecated: `GetStatus` carries the same flag.
+  /// Whether a user is privileged.
+  ///
+  /// Server code 122. Sent by the server.
+  ///
+  /// Deprecated: `GetStatus` carries the same flag.
   pub struct UserPrivilegesResponse {
     pub username: String,
     pub privileged: bool,
@@ -40,7 +58,9 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 123: gives some of our privilege days to another user.
+  /// Request to give privilege days to another user.
+  ///
+  /// Server code 123. Sent by the client. The days come out of the client's own privileges.
   pub struct GivePrivileges {
     pub username: String,
     pub days: u32,
@@ -48,7 +68,12 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 124: a user gave us privileges; acknowledge with `AcknowledgeNotifyPrivileges`.
+  /// Notification that a user gave the client privileges.
+  ///
+  /// Server code 124. Sent by the server.
+  ///
+  /// Acknowledged with [`AcknowledgeNotifyPrivileges`].
+  ///
   /// Deprecated: only Soulseek NS sends it.
   pub struct NotifyPrivileges {
     pub id: u32,
@@ -57,7 +82,11 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 125: acknowledges a `NotifyPrivileges`. Deprecated with it.
+  /// Acknowledgement of a [`NotifyPrivileges`].
+  ///
+  /// Server code 125. Sent by the client.
+  ///
+  /// Deprecated together with [`NotifyPrivileges`].
   pub struct AcknowledgeNotifyPrivileges {
     pub id: u32,
   }

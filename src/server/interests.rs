@@ -1,3 +1,5 @@
+//! Interest messages.
+//!
 //! Interests, recommendations and similar users.
 
 use crate::codec::{Wire, wire_struct};
@@ -5,16 +7,20 @@ use crate::error::DecodeError;
 use crate::wire::{Reader, Writer};
 
 wire_struct! {
-  /// An interest with its score, as the recommendation messages list them
+  /// Interest with its score.
+  ///
+  /// Listed by the recommendation messages.
   pub struct Recommendation {
     pub interest: String,
-    /// signed score, negative for strongly disliked
+    /// Signed score, negative for strongly disliked.
     pub count: i32,
   }
 }
 
-/// Server codes 54 and 56: interests recommended for us or across the network, then those
-/// recommended against, a block that is optional on read and always written.
+/// Recommended interests, then those recommended against.
+///
+/// Server codes 54 and 56. Sent by the server with interests recommended for the client or across
+/// the network. The second block is optional on read and always written.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Recommendations {
@@ -42,14 +48,22 @@ impl Wire for Recommendations {
 }
 
 wire_struct! {
-  /// Server code 50: asks for interests similar to one. Obsolete: the server returns an empty list.
+  /// Request for interests similar to one interest.
+  ///
+  /// Server code 50. Sent by the client.
+  ///
+  /// Obsolete: the server returns an empty list.
   pub struct SimilarRecommendationsRequest {
     pub recommendation: String,
   }
 }
 
 wire_struct! {
-  /// Server code 50: interests similar to one. Obsolete: the list is always empty.
+  /// Interests similar to one interest.
+  ///
+  /// Server code 50. Sent by the server.
+  ///
+  /// Obsolete: the list is always empty.
   pub struct SimilarRecommendationsResponse {
     pub recommendation: String,
     pub similar: Vec<String>,
@@ -57,36 +71,47 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 51: adds an interest we like.
+  /// Request to add an interest the client likes.
+  ///
+  /// Server code 51. Sent by the client.
   pub struct LikedInterestAdd {
     pub interest: String,
   }
 }
 
 wire_struct! {
-  /// Server code 52: removes an interest we like.
+  /// Request to remove an interest the client likes.
+  ///
+  /// Server code 52. Sent by the client.
   pub struct LikedInterestRemove {
     pub interest: String,
   }
 }
 
 wire_struct! {
-  /// Server code 55: the likes the server has on record for us. Obsolete: the live server no longer
-  /// sends it.
+  /// Likes the server has on record for the client.
+  ///
+  /// Server code 55.
+  ///
+  /// Obsolete: the server no longer sends this message.
   pub struct MyRecommendationsResponse {
     pub likes: Vec<String>,
   }
 }
 
 wire_struct! {
-  /// Server code 57: asks for a user's liked and hated interests.
+  /// Request for a user's liked and hated interests.
+  ///
+  /// Server code 57. Sent by the client.
   pub struct GetUserInterestsRequest {
     pub username: String,
   }
 }
 
 wire_struct! {
-  /// Server code 57: a user's liked and hated interests, in reply to `GetUserInterests`.
+  /// Liked and hated interests of a user.
+  ///
+  /// Server code 57. Sent by the server in reply to a [`GetUserInterestsRequest`].
   pub struct UserInterests {
     pub username: String,
     pub likes: Vec<String>,
@@ -95,14 +120,18 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 110: users whose interests are similar to ours, each with a rating.
+  /// Users whose interests are similar to the client's.
+  ///
+  /// Server code 110. Sent by the server, each user with a rating.
   pub struct GetPersonalSimilarUsersResponse {
     pub users: Vec<SimilarUser>,
   }
 }
 
 wire_struct! {
-  /// A user with interests similar to ours and how similar they are
+  /// User with interests similar to the client's.
+  ///
+  /// The rating says how similar they are.
   pub struct SimilarUser {
     pub username: String,
     pub rating: u32,
@@ -110,14 +139,18 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 111: asks for interests recommended alongside one interest.
+  /// Request for interests recommended alongside one interest.
+  ///
+  /// Server code 111. Sent by the client.
   pub struct GetInterestRecommendationsRequest {
     pub interest: String,
   }
 }
 
 wire_struct! {
-  /// Server code 111: interests recommended alongside one interest, and those recommended against.
+  /// Interests recommended alongside one interest.
+  ///
+  /// Server code 111. Sent by the server, with those recommended against.
   pub struct GetInterestRecommendationsResponse {
     pub interest: String,
     pub recommendations: Recommendations,
@@ -125,14 +158,18 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 112: asks for users who share an interest.
+  /// Request for users who share an interest.
+  ///
+  /// Server code 112. Sent by the client.
   pub struct GetInterestSimilarUsersRequest {
     pub interest: String,
   }
 }
 
 wire_struct! {
-  /// Server code 112: users who share an interest.
+  /// Users who share an interest.
+  ///
+  /// Server code 112. Sent by the server.
   pub struct GetInterestSimilarUsersResponse {
     pub interest: String,
     pub usernames: Vec<String>,
@@ -140,14 +177,18 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 117: adds an interest we dislike.
+  /// Request to add an interest the client dislikes.
+  ///
+  /// Server code 117. Sent by the client.
   pub struct HatedInterestAdd {
     pub interest: String,
   }
 }
 
 wire_struct! {
-  /// Server code 118: removes an interest we dislike.
+  /// Request to remove an interest the client dislikes.
+  ///
+  /// Server code 118. Sent by the client.
   pub struct HatedInterestRemove {
     pub interest: String,
   }

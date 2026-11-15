@@ -6,25 +6,29 @@ use crate::log::KeyFields;
 use crate::wire::{Reader, Writer};
 
 wire_struct! {
-  /// Server code 22: a private message we send to a user.
+  /// Private message to a user.
+  ///
+  /// Server code 22. Sent by the client.
   pub struct PrivateMessageRequest {
     pub username: String,
     pub message: String,
   }
 }
 
-/// Server code 22: a private message to us, live or replayed from the server's offline store until
-/// we acknowledge it.
+/// Private message to the client.
+///
+/// Server code 22. Sent by the server, live or replayed from the server's offline store until the
+/// client acknowledges it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct PrivateMessageResponse {
-  /// acknowledge with `AcknowledgePrivateMessage`
+  /// Identifier to acknowledge with [`AcknowledgePrivateMessage`].
   pub id: u32,
-  /// unix seconds, UTC
+  /// Timestamp in Unix seconds, UTC.
   pub timestamp: u32,
   pub username: String,
   pub message: String,
-  /// false when replayed from the server's offline store
+  /// `false` if the message was replayed from the server's offline store.
   pub is_new: bool,
 }
 
@@ -56,22 +60,28 @@ impl Wire for PrivateMessageResponse {
 }
 
 wire_struct! {
-  /// Server code 23: tells the server we received a private message, so it is not replayed at the
-  /// next login.
+  /// Acknowledgement that the client received a private message.
+  ///
+  /// Server code 23. Sent by the client so that the server does not replay the message at the next
+  /// login.
   pub struct AcknowledgePrivateMessage {
     pub id: u32,
   }
 }
 
 wire_struct! {
-  /// Server code 66: a notice from the server admins to every user.
+  /// Notice from the server admins to every user.
+  ///
+  /// Server code 66. Sent by the server.
   pub struct GlobalAdminMessage {
     pub message: String,
   }
 }
 
 wire_struct! {
-  /// Server code 149: one private message to each listed online user.
+  /// One private message to each listed online user.
+  ///
+  /// Server code 149. Sent by the client.
   pub struct MessageUsers {
     pub usernames: Vec<String>,
     pub message: String,
@@ -79,7 +89,9 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 152: a message in any public room, pushed while we follow the public chat feed.
+  /// Message in any public room.
+  ///
+  /// Server code 152. Sent by the server while the client follows the public chat feed.
   pub struct PublicChat {
     pub room: String,
     pub username: String,

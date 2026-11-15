@@ -1,4 +1,4 @@
-//! Messages that set up connections between peers through the server.
+//! Messages that set up peer connections through the server.
 
 use std::net::Ipv4Addr;
 
@@ -10,18 +10,23 @@ use crate::model::PeerConnectionType;
 use crate::wire::{Reader, Writer};
 
 wire_struct! {
-  /// Server code 18: asks the server to tell a peer to connect to us, for when we cannot reach it
-  /// directly.
+  /// Request for a peer to connect to the client.
+  ///
+  /// Server code 18. Sent by the client when it cannot reach the peer directly. The server tells
+  /// the peer to connect to the client.
   pub struct ConnectToPeerRequest {
-    /// fresh; the peer sends it back in `PierceFirewall`
+    /// Fresh token, which the peer sends back in [`PierceFirewall`](crate::init::PierceFirewall).
     pub token: u32,
     pub username: String,
     pub connection_type: PeerConnectionType,
   }
 }
 
-/// Server code 18: a peer asked the server to make us connect to it, with its address and the token
-/// to send back in `PierceFirewall`.
+/// Notification that a peer wants the client to connect to it.
+///
+/// Server code 18. Sent by the server when a peer asked it to make the client connect, with the
+/// address of the peer and the token to send back in
+/// [`PierceFirewall`](crate::init::PierceFirewall).
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct ConnectToPeerResponse {
@@ -29,7 +34,7 @@ pub struct ConnectToPeerResponse {
   pub connection_type: PeerConnectionType,
   pub ip: Ipv4Addr,
   pub port: u32,
-  /// send back in `PierceFirewall`
+  /// Token to send back in [`PierceFirewall`](crate::init::PierceFirewall).
   pub token: u32,
   pub privileged: bool,
   pub obfuscation: Option<Obfuscation>,
@@ -69,8 +74,11 @@ impl Wire for ConnectToPeerResponse {
 }
 
 wire_struct! {
-  /// Server code 33: a token to check a peer connection against, relayed by the server. Obsolete:
-  /// no client sends it.
+  /// Token to check a peer connection against.
+  ///
+  /// Server code 33. Relayed by the server.
+  ///
+  /// Obsolete: no client sends this message.
   pub struct SendConnectToken {
     pub username: String,
     pub token: u32,
@@ -78,21 +86,26 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 1001: tells the server we could not honor a peer's `ConnectToPeer`, so the server
-  /// can tell that peer.
+  /// Notification that the client could not honor a `ConnectToPeer`.
+  ///
+  /// Server code 1001. Sent by the client when it could not honor a peer's `ConnectToPeer`, so that
+  /// the server can tell that peer.
   pub struct CannotConnectRequest {
     pub token: u32,
-    /// the peer we could not reach
+    /// Peer the client could not reach.
     pub username: String,
   }
 }
 
-/// Server code 1001: the peer we asked, through the server, to connect to us could not reach us.
+/// Notification that a peer could not reach the client.
+///
+/// Server code 1001. Sent by the server when the peer the client asked, through the server, to
+/// connect to it could not reach the client.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct CannotConnectResponse {
   pub token: u32,
-  /// the live server sends only the token
+  /// The server sends only the token.
   pub username: Option<String>,
 }
 

@@ -3,7 +3,9 @@
 use crate::codec::wire_struct;
 
 wire_struct! {
-  /// Server code 133: the members of a private room we are in, the owner excluded.
+  /// Members of a private room the client is in.
+  ///
+  /// Server code 133. Sent by the server. Excludes the owner.
   pub struct PrivateRoomUsers {
     pub room: String,
     pub usernames: Vec<String>,
@@ -11,8 +13,10 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 134: adds a member to a private room we own or operate; the server sends the same
-  /// message to every member once done.
+  /// Request to add a member to a private room.
+  ///
+  /// Server code 134. Sent by the client for a room it owns or operates. The server sends the same
+  /// message to every member once the member is added.
   pub struct PrivateRoomAddUser {
     pub room: String,
     pub username: String,
@@ -20,8 +24,10 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 135: removes a member from a private room we own or operate; the server sends the
-  /// same message to every member once done.
+  /// Request to remove a member from a private room.
+  ///
+  /// Server code 135. Sent by the client for a room it owns or operates. The server sends the same
+  /// message to every member once the member is removed.
   pub struct PrivateRoomRemoveUser {
     pub room: String,
     pub username: String,
@@ -29,51 +35,66 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 136: gives up our membership of a private room.
+  /// Request to give up membership of a private room.
+  ///
+  /// Server code 136. Sent by the client.
   pub struct PrivateRoomDropMembership {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 137: gives up our ownership of a private room.
+  /// Request to give up ownership of a private room.
+  ///
+  /// Server code 137. Sent by the client.
   pub struct PrivateRoomDropOwnership {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 138: names a private room; its purpose is unknown. Obsolete: no longer used.
+  /// Message that names a private room.
+  ///
+  /// Server code 138. Its purpose is unknown.
+  ///
+  /// Obsolete: no longer used.
   pub struct PrivateRoomUnknown {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 139: we were made a member of a private room.
+  /// Notification that the client joined a private room.
+  ///
+  /// Server code 139. Sent by the server when the client is made a member of the room.
   pub struct PrivateRoomAdded {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 140: we are no longer a member of a private room.
+  /// Notification that the client left a private room.
+  ///
+  /// Server code 140. Sent by the server when the client is no longer a member of the room.
   pub struct PrivateRoomRemoved {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 141: whether we accept private room invitations, sent after login; the server
-  /// echoes it.
+  /// Whether the client accepts private room invitations.
+  ///
+  /// Server code 141. Sent by the client after login. The server echoes the message back.
   pub struct PrivateRoomToggle {
     pub accept_invitations: bool,
   }
 }
 
 wire_struct! {
-  /// Server code 143: makes a member an operator of a private room we own; the server sends the
-  /// same message to every member once done.
+  /// Request to make a member an operator of a private room.
+  ///
+  /// Server code 143. Sent by the client for a room it owns. The server sends the same message to
+  /// every member once the operator is added.
   pub struct PrivateRoomAddOperator {
     pub room: String,
     pub username: String,
@@ -81,8 +102,10 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 144: removes an operator of a private room we own; the server sends the same
-  /// message to every member once done.
+  /// Request to remove an operator of a private room.
+  ///
+  /// Server code 144. Sent by the client for a room it owns. The server sends the same message to
+  /// every member once the operator is removed.
   pub struct PrivateRoomRemoveOperator {
     pub room: String,
     pub username: String,
@@ -90,21 +113,28 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 145: we were made an operator of a private room.
+  /// Notification that the client became a room operator.
+  ///
+  /// Server code 145. Sent by the server when the client is made an operator of a private room.
   pub struct PrivateRoomOperatorAdded {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 146: we are no longer an operator of a private room.
+  /// Notification that the client lost room operator status.
+  ///
+  /// Server code 146. Sent by the server when the client is no longer an operator of a private
+  /// room.
   pub struct PrivateRoomOperatorRemoved {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 148: the operators of a private room we are in.
+  /// Operators of a private room the client is in.
+  ///
+  /// Server code 148. Sent by the server.
   pub struct PrivateRoomOwned {
     pub room: String,
     pub operators: Vec<String>,

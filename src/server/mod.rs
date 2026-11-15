@@ -1,7 +1,9 @@
-//! The server connection: [`ServerRequest`] is what the client sends, [`ServerResponse`] what the
-//! server sends, pushed or in reply. A code whose layout differs between the two directions has a
-//! `...Request` and a `...Response` struct; a code with one layout both ways has one struct used by
-//! both enums.
+//! Messages on the server connection.
+//!
+//! [`ServerRequest`] holds the messages the client sends, and [`ServerResponse`] the messages the
+//! server sends, unprompted or in reply. A code whose layout differs between the two directions has
+//! a `...Request` and a `...Response` struct; a code with one layout in both directions has one
+//! struct used by both enums.
 
 pub(crate) mod distributed;
 pub(crate) mod interests;
@@ -32,7 +34,7 @@ use crate::codes::ServerCode;
 use crate::distributed::Embedded;
 
 family! {
-  /// Every message the client sends on the server connection
+  /// Every message the client sends on the server connection.
   pub enum ServerRequest {
     code: ServerCode,
     frame: Server,
@@ -45,9 +47,9 @@ family! {
       WatchUser(WatchUserRequest),
       UnwatchUser(UnwatchUser),
       GetStatus(GetStatusRequest),
-      /// obsolete
+      /// Obsolete.
       IgnoreUser(IgnoreUser),
-      /// obsolete
+      /// Obsolete.
       UnignoreUser(UnignoreUser),
       SayInChatRoom(SayInChatRoomRequest),
       JoinRoom(JoinRoomRequest),
@@ -55,54 +57,60 @@ family! {
       ConnectToPeer(ConnectToPeerRequest),
       PrivateMessage(PrivateMessageRequest),
       AcknowledgePrivateMessage(AcknowledgePrivateMessage),
-      /// obsolete
+      /// Obsolete.
       FileSearchRoom(FileSearchRoom),
       FileSearch(FileSearchRequest),
       SetOnlineStatus(SetOnlineStatus),
-      /// a write-liveness probe; the server never answers
+      /// Write-liveness probe.
+      ///
+      /// The server never replies to it.
       Ping,
-      /// obsolete
+      /// Obsolete.
       SendConnectToken(SendConnectToken),
-      /// obsolete `SendDownloadSpeed`
+      /// Obsolete.
       SendSpeed(SendSpeed),
       SharedFoldersAndFiles(SharedFoldersAndFiles),
       GetUserStats(GetUserStatsRequest),
-      /// obsolete `UploadSlotsFull`
+      /// Obsolete.
       QueuedDownloads(QueuedDownloadsRequest),
       UserSearch(UserSearch),
-      /// obsolete
+      /// Obsolete.
       SimilarRecommendations(SimilarRecommendationsRequest),
       LikedInterestAdd(LikedInterestAdd),
       LikedInterestRemove(LikedInterestRemove),
-      /// asks for interests recommended for us
+      /// Request for interests recommended for the client.
       GetPersonalRecommendations,
-      /// asks for the likes the server has on record for us; obsolete
+      /// Request for the likes the server has on record for the client.
+      ///
+      /// Obsolete.
       MyRecommendations,
-      /// asks for interests recommended across the network
+      /// Request for interests recommended across the network.
       GetGlobalRecommendations,
       GetUserInterests(GetUserInterestsRequest),
-      /// obsolete
+      /// Obsolete.
       AdminCommand(AdminCommand),
-      /// obsolete
+      /// Obsolete.
       PlaceInLineRequest(PlaceInLineRequest),
-      /// obsolete
+      /// Obsolete.
       PlaceInLineResponse(PlaceInLineResponse),
-      /// asks for the room list
+      /// Request for the room list.
       RoomList,
-      /// obsolete
+      /// Obsolete.
       ExactFileSearch(ExactFileSearchRequest),
-      /// asks for every online user; obsolete
+      /// Request for every online user.
+      ///
+      /// Obsolete.
       GlobalUserList,
-      /// obsolete
+      /// Obsolete.
       TunneledMessage(TunneledMessageRequest),
       HaveNoParents(HaveNoParents),
-      /// deprecated, never sent
+      /// Deprecated: never sent.
       ParentsIP(ParentsIP),
-      /// asks how much privilege time we have left
+      /// Request for the privilege time the client has left.
       CheckPrivileges,
       AcceptChildren(AcceptChildren),
       WishlistSearch(WishlistSearch),
-      /// asks for users whose interests are similar to ours
+      /// Request for users whose interests are similar to the client's.
       GetPersonalSimilarUsers,
       GetInterestRecommendations(GetInterestRecommendationsRequest),
       GetInterestSimilarUsers(GetInterestSimilarUsersRequest),
@@ -111,31 +119,31 @@ family! {
       HatedInterestRemove(HatedInterestRemove),
       RoomSearch(RoomSearch),
       SendUploadSpeed(SendUploadSpeed),
-      /// deprecated
+      /// Deprecated.
       UserPrivileges(UserPrivilegesRequest),
       GivePrivileges(GivePrivileges),
-      /// deprecated
+      /// Deprecated.
       AcknowledgeNotifyPrivileges(AcknowledgeNotifyPrivileges),
       BranchLevel(BranchLevel),
       BranchRoot(BranchRoot),
-      /// obsolete, never sent
+      /// Obsolete: never sent.
       ChildDepth(ChildDepth),
       PrivateRoomAddUser(PrivateRoomAddUser),
       PrivateRoomRemoveUser(PrivateRoomRemoveUser),
       PrivateRoomDropMembership(PrivateRoomDropMembership),
       PrivateRoomDropOwnership(PrivateRoomDropOwnership),
-      /// obsolete
+      /// Obsolete.
       PrivateRoomUnknown(PrivateRoomUnknown),
       PrivateRoomToggle(PrivateRoomToggle),
       NewPassword(NewPassword),
       PrivateRoomAddOperator(PrivateRoomAddOperator),
       PrivateRoomRemoveOperator(PrivateRoomRemoveOperator),
       MessageUsers(MessageUsers),
-      /// starts the public chat feed
+      /// Request to start the public chat feed.
       AskPublicChat,
-      /// stops the public chat feed
+      /// Request to stop the public chat feed.
       StopPublicChat,
-      /// obsolete
+      /// Obsolete.
       RelatedSearch(RelatedSearchRequest),
       CannotConnect(CannotConnectRequest),
     }
@@ -143,21 +151,21 @@ family! {
 }
 
 family! {
-  /// Every message the server sends, pushed or in reply
+  /// Every message the server sends, unprompted or in reply.
   pub enum ServerResponse {
     code: ServerCode,
     frame: Server,
     label: "server response",
-    // embedded messages arrive for every network search while we are a branch root
+    // embedded messages arrive for every network search while the client is a branch root
     quiet: [EmbeddedMessage],
     messages: {
       Login(LoginResponse),
       GetPeerAddress(GetPeerAddressResponse),
       WatchUser(WatchUserResponse),
       GetStatus(UserStatus),
-      /// obsolete
+      /// Obsolete.
       IgnoreUser(IgnoreUser),
-      /// obsolete
+      /// Obsolete.
       UnignoreUser(UnignoreUser),
       SayInChatRoom(SayInChatRoomResponse),
       JoinRoom(RoomData),
@@ -166,55 +174,57 @@ family! {
       UserLeftRoom(UserLeftRoom),
       ConnectToPeer(ConnectToPeerResponse),
       PrivateMessage(PrivateMessageResponse),
-      /// a search for us to answer
+      /// Search for the client to answer.
       FileSearch(FileSearchResponse),
-      /// the live server never sends this
+      /// The server never sends this message.
       Ping,
-      /// obsolete
+      /// Obsolete.
       SendConnectToken(SendConnectToken),
       GetUserStats(UserStatistics),
-      /// obsolete `UploadSlotsFull`
+      /// Obsolete.
       QueuedDownloads(QueuedDownloadsResponse),
-      /// another session logged in with our credentials
+      /// Notice of another login with the client's credentials.
       KickedFromServer,
-      /// obsolete
+      /// Obsolete.
       SimilarRecommendations(SimilarRecommendationsResponse),
       GetPersonalRecommendations(Recommendations),
-      /// obsolete
+      /// Obsolete.
       MyRecommendations(MyRecommendationsResponse),
       GetGlobalRecommendations(Recommendations),
       GetUserInterests(UserInterests),
-      /// obsolete
+      /// Obsolete.
       PlaceInLineRequest(PlaceInLineRequest),
-      /// obsolete
+      /// Obsolete.
       PlaceInLineResponse(PlaceInLineResponse),
-      /// obsolete
+      /// Obsolete.
       RoomAdded(RoomAdded),
-      /// obsolete
+      /// Obsolete.
       RoomRemoved(RoomRemoved),
       RoomList(RoomList),
-      /// obsolete
+      /// Obsolete.
       ExactFileSearch(ExactFileSearchResponse),
       GlobalAdminMessage(GlobalAdminMessage),
-      /// obsolete
+      /// Obsolete.
       GlobalUserList(GlobalUserListResponse),
-      /// obsolete
+      /// Obsolete.
       TunneledMessage(TunneledMessageResponse),
       PrivilegedUsers(PrivilegedUsers),
       ParentMinSpeed(ParentMinSpeed),
       ParentSpeedRatio(ParentSpeedRatio),
-      /// obsolete
+      /// Obsolete.
       ParentInactivityTimeout(ParentInactivityTimeout),
-      /// obsolete
+      /// Obsolete.
       SearchInactivityTimeout(SearchInactivityTimeout),
-      /// obsolete
+      /// Obsolete.
       MinimumParentsInCache(MinimumParentsInCache),
-      /// obsolete
+      /// Obsolete.
       DistributedAliveInterval(DistributedAliveInterval),
-      /// obsolete
+      /// Obsolete.
       AddPrivilegedUser(AddPrivilegedUser),
       CheckPrivileges(CheckPrivilegesResponse),
-      /// a distributed message the server wraps for a branch root
+      /// Distributed message wrapped by the server.
+      ///
+      /// Sent to a branch root.
       EmbeddedMessage(Embedded),
       NetInfo(NetInfo),
       WishlistInterval(WishlistInterval),
@@ -224,16 +234,20 @@ family! {
       RoomTickers(RoomTickers),
       RoomTickerAdd(RoomTickerAdd),
       RoomTickerRemove(RoomTickerRemove),
-      /// deprecated
+      /// Deprecated.
       UserPrivileges(UserPrivilegesResponse),
-      /// deprecated, acknowledge with `AcknowledgeNotifyPrivileges`
+      /// Acknowledged with [`AcknowledgeNotifyPrivileges`].
+      ///
+      /// Deprecated.
       NotifyPrivileges(NotifyPrivileges),
-      /// drop every distributed connection and look for a new parent
+      /// Instruction to reset distributed connections.
+      ///
+      /// Tells the client to drop every distributed connection and look for a new parent.
       DistributedReset,
       PrivateRoomUsers(PrivateRoomUsers),
       PrivateRoomAddUser(PrivateRoomAddUser),
       PrivateRoomRemoveUser(PrivateRoomRemoveUser),
-      /// obsolete
+      /// Obsolete.
       PrivateRoomUnknown(PrivateRoomUnknown),
       PrivateRoomAdded(PrivateRoomAdded),
       PrivateRoomRemoved(PrivateRoomRemoved),
@@ -245,7 +259,7 @@ family! {
       PrivateRoomOperatorRemoved(PrivateRoomOperatorRemoved),
       PrivateRoomOwned(PrivateRoomOwned),
       PublicChat(PublicChat),
-      /// obsolete
+      /// Obsolete.
       RelatedSearch(RelatedSearchResponse),
       ExcludedSearchPhrases(ExcludedSearchPhrases),
       CannotConnect(CannotConnectResponse),

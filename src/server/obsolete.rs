@@ -1,4 +1,6 @@
-//! Obsolete server messages kept as codecs only, which belong to none of the other topics.
+//! Obsolete server messages kept as codecs only.
+//!
+//! Each belongs to none of the other topics.
 
 use std::net::Ipv4Addr;
 
@@ -10,16 +12,22 @@ use crate::log::KeyFields;
 use crate::wire::{Reader, Writer};
 
 wire_struct! {
-  /// Server code 34, also named `SendDownloadSpeed`: a download's speed, sent to update the
-  /// uploader's statistics. Obsolete: `SendUploadSpeed` replaced it.
+  /// Speed of a download.
+  ///
+  /// Server code 34, also named `SendDownloadSpeed`. Sent to update the uploader's statistics.
+  ///
+  /// Obsolete: replaced by [`SendUploadSpeed`](super::SendUploadSpeed).
   pub struct SendSpeed {
     pub username: String,
     pub speed: u32,
   }
 }
 
-/// Server code 40, also named `UploadSlotsFull`: whether all our upload slots are busy, a boolean
-/// carried as `u32`. Obsolete: no client sends it.
+/// Whether all of the client's upload slots are busy.
+///
+/// Server code 40, also named `UploadSlotsFull`. A boolean carried as a `u32`.
+///
+/// Obsolete: no client sends this message.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct QueuedDownloadsRequest {
@@ -40,8 +48,11 @@ impl Wire for QueuedDownloadsRequest {
   }
 }
 
-/// Server code 40, also named `UploadSlotsFull`: whether all of a user's upload slots are busy.
-/// Obsolete: the live server no longer sends it.
+/// Whether all of a user's upload slots are busy.
+///
+/// Server code 40, also named `UploadSlotsFull`.
+///
+/// Obsolete: the server no longer sends this message.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct QueuedDownloadsResponse {
@@ -70,8 +81,11 @@ impl Wire for QueuedDownloadsResponse {
 }
 
 wire_struct! {
-  /// Server code 58: a server admin command, for accounts with admin status. Obsolete: it no longer
-  /// has any effect.
+  /// Server admin command.
+  ///
+  /// Server code 58. For accounts with admin status.
+  ///
+  /// Obsolete: the message no longer has any effect.
   pub struct AdminCommand {
     pub command: String,
     pub args: Vec<String>,
@@ -79,8 +93,11 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 59: asks for a queue place by transfer token, relayed by the server. Obsolete:
-  /// peers ask with `PlaceInQueueRequest`.
+  /// Request for a queue place by transfer token.
+  ///
+  /// Server code 59. Relayed by the server.
+  ///
+  /// Obsolete: peers ask with [`PlaceInQueueRequest`](crate::peer::PlaceInQueueRequest).
   pub struct PlaceInLineRequest {
     pub username: String,
     pub token: u32,
@@ -88,8 +105,11 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 60: a queue place by transfer token, relayed by the server. Obsolete: peers answer
-  /// with `PlaceInQueueResponse`.
+  /// Queue place by transfer token.
+  ///
+  /// Server code 60. Relayed by the server.
+  ///
+  /// Obsolete: peers answer with [`PlaceInQueueResponse`](crate::peer::PlaceInQueueResponse).
   pub struct PlaceInLineResponse {
     pub username: String,
     pub token: u32,
@@ -97,7 +117,11 @@ wire_struct! {
   }
 }
 
-/// Server code 67: every online user, in the five parallel lists of `JoinRoom` without a room name.
+/// Every online user.
+///
+/// Server code 67. Carried in the five parallel lists of [`RoomData`](super::RoomData), without a
+/// room name.
+///
 /// Obsolete: no longer served.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
@@ -124,8 +148,12 @@ impl Wire for GlobalUserListResponse {
 }
 
 wire_struct! {
-  /// Server code 68: a message tunneled through the server to a peer we cannot reach; the field
-  /// order differs from the response. Obsolete.
+  /// Message tunneled through the server to a peer.
+  ///
+  /// Server code 68. Sent by the client to a peer it cannot reach. The field order differs from
+  /// [`TunneledMessageResponse`].
+  ///
+  /// Obsolete.
   pub struct TunneledMessageRequest {
     pub username: String,
     pub token: u32,
@@ -135,8 +163,11 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 68: a message a peer tunneled to us through the server. Obsolete: the live server
-  /// no longer sends it.
+  /// Message a peer tunneled to the client through the server.
+  ///
+  /// Server code 68.
+  ///
+  /// Obsolete: the server no longer sends this message.
   pub struct TunneledMessageResponse {
     pub username: String,
     pub code: u32,

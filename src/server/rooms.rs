@@ -1,4 +1,6 @@
-//! Chat room messages: joining, leaving, members, the room list and tickers.
+//! Chat room messages.
+//!
+//! Joining and leaving rooms, room membership, the room list and tickers.
 
 use super::users::{UserData, UserStats};
 use crate::codec::{Wire, wire_struct};
@@ -8,7 +10,9 @@ use crate::model::{RoomType, UserPresence};
 use crate::wire::{Reader, Writer};
 
 wire_struct! {
-  /// Server code 13: a chat message we send to a room.
+  /// Chat message sent to a room.
+  ///
+  /// Server code 13. Sent by the client.
   pub struct SayInChatRoomRequest {
     pub room: String,
     pub message: String,
@@ -16,7 +20,10 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 13: a chat message in a room we are in, our own messages included.
+  /// Chat message in a joined room.
+  ///
+  /// Server code 13. Sent by the server for every message in a room the client has joined,
+  /// including messages the client sent.
   pub struct SayInChatRoomResponse {
     pub room: String,
     pub username: String,
@@ -25,32 +32,40 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 14: asks to join a room, creating it with `room_type` if it does not exist.
+  /// Request to join a room.
+  ///
+  /// Server code 14. Sent by the client. The server creates the room with `room_type` if it does
+  /// not exist.
   pub struct JoinRoomRequest {
     pub room: String,
-    /// the type of room to create if it does not exist
+    /// Type of the room to create if it does not exist.
     pub room_type: RoomType,
   }
 }
 
-/// Server code 14: the members of a room we joined, and its owner and operators when it is private.
+/// Members of a joined room.
+///
+/// Server code 14. Sent by the server when the client joins a room, with the owner and operators
+/// of a private room.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct RoomData {
   pub name: String,
-  /// for a private room this includes the owner and the operators
+  /// Members of the room. For a private room, includes the owner and the operators.
   pub users: Vec<UserData>,
-  /// present exactly when the room is private
+  /// Owner and operators, present if and only if the room is private.
   pub private: Option<PrivateRoomData>,
 }
 
 impl RoomData {
-  /// how many members the room has
+  /// Returns the number of members in the room.
   pub fn user_count(&self) -> usize {
     self.users.len()
   }
 
-  /// the room is private, so its owner and operators are known
+  /// Returns `true` if the room is private.
+  ///
+  /// The owner and operators of a private room are known.
   pub fn is_private(&self) -> bool {
     self.private.is_some()
   }
@@ -85,7 +100,9 @@ impl Wire for RoomData {
 }
 
 wire_struct! {
-  /// The owner and operators that follow the member lists of a private room in `RoomData`
+  /// Owner and operators of a private room.
+  ///
+  /// Follows the member lists in [`RoomData`].
   pub struct PrivateRoomData {
     pub owner: String,
     pub operators: Vec<String>,
@@ -159,13 +176,19 @@ pub(super) fn write_user_lists(w: &mut Writer, users: &[UserData]) {
 }
 
 wire_struct! {
-  /// Server code 15: asks to leave a room; the server echoes it once we have left.
+  /// Request to leave a room.
+  ///
+  /// Server code 15. Sent by the client. The server echoes the message back once the client has
+  /// left the room.
   pub struct LeaveRoom {
     pub room: String,
   }
 }
 
-/// Server code 16: someone joined a room we are in, ourselves included.
+/// Notification that a user joined a room.
+///
+/// Server code 16. Sent by the server for a room the client is in, including when the client
+/// itself joins.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserJoinedRoom {
@@ -205,7 +228,10 @@ impl Wire for UserJoinedRoom {
 }
 
 wire_struct! {
-  /// Server code 17: someone other than us left a room we are in.
+  /// Notification that a user left a room.
+  ///
+  /// Server code 17. Sent by the server for a room the client is in, when a user other than the
+  /// client leaves.
   pub struct UserLeftRoom {
     pub room: String,
     pub username: String,
@@ -213,20 +239,28 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 62: a room was created. Obsolete: the live server no longer sends it.
+  /// Notification that a room was created.
+  ///
+  /// Server code 62.
+  ///
+  /// Obsolete: the server no longer sends this message.
   pub struct RoomAdded {
     pub room: String,
   }
 }
 
 wire_struct! {
-  /// Server code 63: a room was removed. Obsolete: the live server no longer sends it.
+  /// Notification that a room was removed.
+  ///
+  /// Server code 63.
+  ///
+  /// Obsolete: the server no longer sends this message.
   pub struct RoomRemoved {
     pub room: String,
   }
 }
 
-/// One entry of `RoomList`
+/// One entry of [`RoomList`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct RoomInfo {
@@ -262,17 +296,19 @@ fn write_room_block(w: &mut Writer, rooms: &[RoomInfo]) {
   }
 }
 
-/// Server code 64: the server's list of public rooms with their user counts, and the private rooms
-/// we own, belong to and operate, sent after login and whenever we ask.
+/// List of chat rooms with their user counts.
+///
+/// Server code 64. Sent by the server after login and in reply to a room list request. Holds the
+/// public rooms, and the private rooms the client owns, is a member of and operates.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct RoomList {
   pub public: Vec<RoomInfo>,
-  /// private rooms we own
+  /// Private rooms the client owns.
   pub owned: Vec<RoomInfo>,
-  /// private rooms we are a member of but do not own
+  /// Private rooms the client is a member of but does not own.
   pub private: Vec<RoomInfo>,
-  /// private rooms we operate
+  /// Private rooms the client operates.
   pub moderated_room_names: Vec<String>,
 }
 
@@ -301,7 +337,9 @@ impl Wire for RoomList {
 }
 
 wire_struct! {
-  /// Server code 113: every ticker of a room, pushed when we join it.
+  /// Every ticker in a room.
+  ///
+  /// Server code 113. Sent by the server when the client joins the room.
   pub struct RoomTickers {
     pub room: String,
     pub tickers: Vec<RoomTicker>,
@@ -309,7 +347,9 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// A user's ticker, the short status line shown next to them in a room
+  /// A user's ticker in a room.
+  ///
+  /// A ticker is the short status line shown next to the user in a room.
   pub struct RoomTicker {
     pub username: String,
     pub message: String,
@@ -317,7 +357,9 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 114: a user set their ticker in a room we are in.
+  /// Notification that a user set their ticker.
+  ///
+  /// Server code 114. Sent by the server for a room the client is in.
   pub struct RoomTickerAdd {
     pub room: String,
     pub ticker: RoomTicker,
@@ -325,7 +367,9 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 115: a user cleared their ticker in a room we are in.
+  /// Notification that a user cleared their ticker.
+  ///
+  /// Server code 115. Sent by the server for a room the client is in.
   pub struct RoomTickerRemove {
     pub room: String,
     pub username: String,
@@ -333,17 +377,21 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 116: sets or clears our ticker in a room.
+  /// Request to set or clear the client's ticker in a room.
+  ///
+  /// Server code 116. Sent by the client.
   pub struct SetRoomTicker {
     pub room: String,
-    /// empty clears the ticker
+    /// Ticker text. An empty string clears the ticker.
     pub ticker: String,
   }
 }
 
 wire_struct! {
-  /// Server code 1003: a `JoinRoom` would have created a room with the name of an existing private
-  /// room.
+  /// Rejection of a request to join a room.
+  ///
+  /// Server code 1003. Sent by the server when a [`JoinRoomRequest`] would have created a room
+  /// with the name of an existing private room.
   pub struct CannotJoinRoom {
     pub room: String,
   }
