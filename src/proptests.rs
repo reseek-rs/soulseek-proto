@@ -311,6 +311,7 @@ proptest! {
     let frame = w.finish();
     let limits = Limits {
       files_per_response: 4,
+      files_per_search_response: 4,
       inflated_browse_bytes: 4096,
       inflated_folder_bytes: 4096,
       inflated_search_bytes: 4096,

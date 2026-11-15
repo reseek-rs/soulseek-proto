@@ -53,6 +53,7 @@ impl Wire for SearchResponse {
       r,
       |limits| limits.inflated_search_bytes,
       |r| {
+        r.limit_files(r.limits().files_per_search_response);
         let username = r.string("username")?;
         let token = r.u32("token")?;
         let files = read_files(r, "files")?;
@@ -214,7 +215,7 @@ pub(crate) mod tests {
     });
     let frame = response.encode();
     let files = Limits {
-      files_per_response: 2,
+      files_per_search_response: 2,
       ..Limits::DEFAULT
     };
     assert_eq!(

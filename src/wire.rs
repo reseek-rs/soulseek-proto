@@ -133,6 +133,7 @@ pub(crate) struct Reader<'a> {
   buf: &'a [u8],
   limits: &'a Limits,
   message: &'static str,
+  file_limit: usize,
   files_left: usize,
   directories_left: usize,
 }
@@ -143,9 +144,16 @@ impl<'a> Reader<'a> {
       buf,
       limits,
       message,
+      file_limit: limits.files_per_response,
       files_left: limits.files_per_response,
       directories_left: LIMIT_DIRECTORIES_PER_RESPONSE,
     }
+  }
+
+  /// replaces the file allowance, for a message with a file limit of its own
+  pub(crate) fn limit_files(&mut self, limit: usize) {
+    self.file_limit = limit;
+    self.files_left = limit;
   }
 
   pub(crate) fn limits(&self) -> &'a Limits {
@@ -170,7 +178,7 @@ impl<'a> Reader<'a> {
     count: usize,
     field: &'static str,
   ) -> Result<(), DecodeError> {
-    let limit = self.limits.files_per_response;
+    let limit = self.file_limit;
     let Some(left) = self.files_left.checked_sub(count) else {
       return Err(self.fail(
         field,

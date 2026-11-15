@@ -49,11 +49,16 @@ pub const LIMIT_DESCRIPTION_BYTES: usize = 256 << 10;
 /// Maximum length of the picture in an
 /// [`InfoResponse`](crate::PeerMessage::InfoResponse), in bytes.
 pub const LIMIT_USER_INFO_PICTURE_BYTES: usize = 16 << 20;
-/// Maximum number of files in one response.
+/// Maximum number of files in one browse or folder response.
 ///
-/// The count is the total over one browse, search or folder response. This is the default of
+/// The count is the total over the response. This is the default of
 /// [`Limits::files_per_response`].
-pub const LIMIT_FILES_PER_RESPONSE: usize = 10_000_000;
+pub const LIMIT_FILES_PER_RESPONSE: usize = 2_000_000;
+/// Maximum number of files in one search response.
+///
+/// The count is the total over the response, locked files included. Any peer that saw the search
+/// can send a search response. This is the default of [`Limits::files_per_search_response`].
+pub const LIMIT_FILES_PER_SEARCH_RESPONSE: usize = 10_000;
 /// Maximum number of directories in one response.
 ///
 /// The count is the total over one browse or folder response.
@@ -74,10 +79,14 @@ pub struct Limits {
   pub inflated_folder_bytes: usize,
   /// Maximum decompressed size of a search response, in bytes.
   pub inflated_search_bytes: usize,
-  /// Maximum number of files in one response.
+  /// Maximum number of files in one browse or folder response.
   ///
-  /// The count is the total over one browse, search or folder response.
+  /// The count is the total over the response.
   pub files_per_response: usize,
+  /// Maximum number of files in one search response.
+  ///
+  /// The count is the total over the response, locked files included.
+  pub files_per_search_response: usize,
 }
 
 impl Limits {
@@ -88,6 +97,7 @@ impl Limits {
     inflated_folder_bytes: LIMIT_INFLATED_FOLDER_BYTES,
     inflated_search_bytes: LIMIT_INFLATED_SEARCH_BYTES,
     files_per_response: LIMIT_FILES_PER_RESPONSE,
+    files_per_search_response: LIMIT_FILES_PER_SEARCH_RESPONSE,
   };
 
   /// Returns the largest accepted frame `len` for `kind`, in bytes.
