@@ -247,7 +247,6 @@ impl<'a> Reader<'a> {
     &self.buf[..n.min(self.buf.len())]
   }
 
-  /// everything up to the end of the message
   pub(crate) fn rest(&mut self) -> &'a [u8] {
     std::mem::take(&mut self.buf)
   }
@@ -283,8 +282,7 @@ impl<'a> Reader<'a> {
     Ok(self.u8(field)? != 0)
   }
 
-  /// only 1 is true; `Login.success`, `Login.is_supporter`, `TransferResponse.allowed` and
-  /// `PrivateMessage.is_new` read this way
+  /// only 1 is true
   pub(crate) fn bool_exact(&mut self, field: &'static str) -> Result<bool, DecodeError> {
     Ok(self.u8(field)? == 1)
   }
@@ -317,18 +315,16 @@ impl<'a> Reader<'a> {
     self.text(LIMIT_STRING_BYTES, field)
   }
 
-  /// the user-info description and the login greeting, which have a larger limit
   pub(crate) fn description(&mut self, field: &'static str) -> Result<String, DecodeError> {
     self.text(LIMIT_DESCRIPTION_BYTES, field)
   }
 
-  /// A string of at most `limit` bytes, also as it is written back: a Latin-1 string grows
-  /// when written as UTF-8, up to twice its bytes, and one that would outgrow the limit is
-  /// refused here so whatever decodes also encodes within it
+  /// at most `limit` bytes both as read and as written back, so whatever decodes also encodes
+  /// within it; latin-1 text grows up to twice its bytes when written as utf-8
   fn text(&mut self, limit: usize, field: &'static str) -> Result<String, DecodeError> {
     let text = decode_text(self.raw_string(limit, field)?).0;
     if text.len() > limit {
-      // at most twice a limit of a few hundred KiB, which fits
+      // at most twice a limit of a few hundred KiB, which fits in a u32
       let len = text.len() as u32;
       return Err(self.fail(field, FieldError::StringTooLong { len, limit }));
     }

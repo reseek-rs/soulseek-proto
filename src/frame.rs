@@ -42,10 +42,10 @@ pub struct Frame<'a> {
   pub payload: &'a [u8],
 }
 
-/// Reads the length and code as soon as they are buffered, before the payload arrives (the
-/// browse progress hook needs them). `Ok(None)` means more bytes are needed. A length below the
-/// code width or above the limit is an error and the connection should be closed; the caller
-/// logs it, since a peer can send such lengths as often as it likes.
+/// Reads the length and code as soon as they are buffered, before the payload arrives.
+/// `Ok(None)` means more bytes are needed. A length below the code width or above the limit is
+/// an error and the connection should be closed; the caller logs it, since a peer can send such
+/// lengths as often as it likes.
 pub fn header(
   kind: FrameKind,
   buf: &[u8],

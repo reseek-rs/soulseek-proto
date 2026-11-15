@@ -91,7 +91,6 @@ impl Wire for u64 {
   }
 }
 
-/// a `u8` where any non-zero value is true
 impl Wire for bool {
   const MIN_BYTES: usize = 1;
 

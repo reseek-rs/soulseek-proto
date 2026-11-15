@@ -8,10 +8,9 @@
 //! the family enum (`ServerRequest`, `PeerMessage`, ...) ties every variant to its code and has
 //! `encode(&self) -> Vec<u8>`, which produces a complete frame, and `decode(&[u8])`, which takes
 //! exactly one complete frame as [`frame::split`] returns it. Decoders enforce [`Limits`] and log
-//! what they decode and what they reject at `debug`, and a buffer that is not exactly one frame
-//! at `warn`.
+//! what they decode and what they reject at `debug`, and a partial frame or bytes past one frame
+//! at `warn`. A frame length out of range is returned unlogged for the caller to log.
 
-// the README's example compiles as a doc test
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 struct ReadmeDoctest;

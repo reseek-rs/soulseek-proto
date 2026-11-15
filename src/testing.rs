@@ -120,7 +120,6 @@ fn inflate(compressed: &[u8]) -> Option<Vec<u8>> {
   Some(out)
 }
 
-/// the first `n` bytes of a frame, for truncation tests
 pub(crate) fn first(mut bytes: Vec<u8>, n: usize) -> Vec<u8> {
   bytes.truncate(n);
   bytes
