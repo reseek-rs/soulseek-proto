@@ -1,5 +1,10 @@
 # soulseek-proto
 
+[![crates.io](https://img.shields.io/crates/v/soulseek-proto)](https://crates.io/crates/soulseek-proto)
+[![docs.rs](https://img.shields.io/docsrs/soulseek-proto)](https://docs.rs/soulseek-proto)
+[![ci](https://github.com/reseek-rs/soulseek-proto/actions/workflows/ci.yml/badge.svg)](https://github.com/reseek-rs/soulseek-proto/actions/workflows/ci.yml)
+[![license](https://img.shields.io/crates/l/soulseek-proto)](#license)
+
 The Soulseek wire protocol as Rust types: every server, peer, distributed and peer-init message
 with its encoder and decoder, the frame codec, decode limits and the data model.
 
