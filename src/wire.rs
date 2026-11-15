@@ -18,10 +18,13 @@ use crate::limits::{
 /// The bytes are what is echoed back to that peer. [`as_str`](Self::as_str) is for display and
 /// is decoded as ISO-8859-1 ([`is_lossy`](Self::is_lossy)) when the bytes are not UTF-8.
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub struct RemoteFilename {
-  bytes: Vec<u8>,
-  display: String,
-  lossy: bool,
+pub struct RemoteFilename(Repr);
+
+/// utf-8 bytes are their own display text, so only other bytes are kept beside their text
+#[derive(Clone, PartialEq, Eq, Hash)]
+enum Repr {
+  Utf8(String),
+  Latin1 { bytes: Vec<u8>, display: String },
 }
 
 impl RemoteFilename {
@@ -29,61 +32,69 @@ impl RemoteFilename {
   ///
   /// The bytes are kept as they are and decoded for display.
   pub fn from_bytes(bytes: Vec<u8>) -> Self {
-    let (display, lossy) = decode_text(&bytes);
-    Self {
-      bytes,
-      display,
-      lossy,
-    }
+    Self(match String::from_utf8(bytes) {
+      Ok(text) => Repr::Utf8(text),
+      Err(error) => {
+        let bytes = error.into_bytes();
+        tracing::trace!(
+          len = bytes.len(),
+          "filename is not utf-8, decoded as iso-8859-1"
+        );
+        let display = latin1(&bytes);
+        Repr::Latin1 { bytes, display }
+      }
+    })
   }
 
   /// Returns the bytes as the peer sent them.
   ///
   /// These are the bytes to echo back to the peer.
   pub fn as_bytes(&self) -> &[u8] {
-    &self.bytes
+    match &self.0 {
+      Repr::Utf8(text) => text.as_bytes(),
+      Repr::Latin1 { bytes, .. } => bytes,
+    }
   }
 
   /// Returns the text for display.
   ///
   /// The text is decoded as ISO-8859-1 when the bytes are not UTF-8.
   pub fn as_str(&self) -> &str {
-    &self.display
+    match &self.0 {
+      Repr::Utf8(text) => text,
+      Repr::Latin1 { display, .. } => display,
+    }
   }
 
   /// Returns `true` if the bytes were decoded as ISO-8859-1.
   ///
   /// The bytes are decoded as ISO-8859-1 when they are not UTF-8.
   pub fn is_lossy(&self) -> bool {
-    self.lossy
+    matches!(self.0, Repr::Latin1 { .. })
   }
 }
 
 impl From<String> for RemoteFilename {
-  fn from(display: String) -> Self {
-    Self {
-      bytes: display.as_bytes().to_vec(),
-      display,
-      lossy: false,
-    }
+  fn from(text: String) -> Self {
+    Self(Repr::Utf8(text))
   }
 }
 
 impl From<&str> for RemoteFilename {
-  fn from(display: &str) -> Self {
-    Self::from(display.to_owned())
+  fn from(text: &str) -> Self {
+    Self::from(text.to_owned())
   }
 }
 
 impl fmt::Debug for RemoteFilename {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    fmt::Debug::fmt(&self.display, f)
+    fmt::Debug::fmt(self.as_str(), f)
   }
 }
 
 impl fmt::Display for RemoteFilename {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.write_str(&self.display)
+    f.write_str(self.as_str())
   }
 }
 
@@ -111,17 +122,21 @@ impl fmt::Debug for Secret {
   }
 }
 
-/// strict utf-8, else iso-8859-1 (every byte is the code point of the same value); the flag says
-/// the fallback was used
-fn decode_text(bytes: &[u8]) -> (String, bool) {
+/// every byte is the code point of the same value
+fn latin1(bytes: &[u8]) -> String {
+  bytes.iter().map(|&b| char::from(b)).collect()
+}
+
+/// strict utf-8, else iso-8859-1
+fn decode_text(bytes: &[u8]) -> String {
   match std::str::from_utf8(bytes) {
-    Ok(text) => (text.to_owned(), false),
+    Ok(text) => text.to_owned(),
     Err(_) => {
       tracing::trace!(
         len = bytes.len(),
         "string is not utf-8, decoded as iso-8859-1"
       );
-      (bytes.iter().map(|&b| char::from(b)).collect(), true)
+      latin1(bytes)
     }
   }
 }
@@ -344,7 +359,7 @@ impl<'a> Reader<'a> {
   /// at most `limit` bytes both as read and as written back, so whatever decodes also encodes
   /// within it; latin-1 text grows up to twice its bytes when written as utf-8
   fn text(&mut self, limit: usize, field: &'static str) -> Result<String, DecodeError> {
-    let text = decode_text(self.raw_string(limit, field)?).0;
+    let text = decode_text(self.raw_string(limit, field)?);
     if text.len() > limit {
       // at most twice a limit of a few hundred KiB, which fits in a u32
       let len = text.len() as u32;
