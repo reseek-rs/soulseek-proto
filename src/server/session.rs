@@ -71,7 +71,7 @@ pub enum LoginResponse {
     greeting: String,
     /// Address of the client as the server sees it.
     ip: Ipv4Addr,
-    /// MD5 digest sent by the server, for information only.
+    /// Lowercase hexadecimal MD5 digest of the password the client sent, for information only.
     hash: Secret,
     /// Whether the client's account has ever bought privileges.
     is_supporter: bool,
@@ -216,6 +216,7 @@ pub(crate) mod tests {
   use crate::testing::{IP, decodes, field, ip, p, vectors};
 
   const MD5_USERNAME_PASSWORD: &str = "d51c9a7e9353746a6020f9602d452929";
+  const MD5_PASSWORD: &str = "5f4dcc3b5aa765d61d8327deb882cf99";
 
   vectors! {
     login_request:
@@ -223,9 +224,9 @@ pub(crate) mod tests {
       => p().s("username").s("password").u32(177).s(MD5_USERNAME_PASSWORD).u32(760).frame(1);
     login_response_success:
       R::Login(LoginResponse::Success {
-        greeting: "welcome\nto soulseek".into(), ip: ip(), hash: Secret::new(MD5_USERNAME_PASSWORD), is_supporter: true,
+        greeting: "welcome\nto soulseek".into(), ip: ip(), hash: Secret::new(MD5_PASSWORD), is_supporter: true,
       })
-      => p().u8(1).s("welcome\nto soulseek").ip(IP).s(MD5_USERNAME_PASSWORD).u8(1).frame(1);
+      => p().u8(1).s("welcome\nto soulseek").ip(IP).s(MD5_PASSWORD).u8(1).frame(1);
     login_response_failure:
       R::Login(LoginResponse::Failure { reason: "INVALIDPASS".into(), detail: None }) => p().u8(0).s("INVALIDPASS").frame(1);
     login_response_failure_with_detail:
@@ -251,7 +252,7 @@ pub(crate) mod tests {
     login_response_success_must_be_exactly_one: R, p().u8(2).s("INVALIDPASS").frame(1)
       => Ok(R::Login(LoginResponse::Failure { reason: "INVALIDPASS".into(), detail: None }));
     login_response_success_without_supporter_flag_is_truncated: R,
-      p().u8(1).s("welcome").ip(IP).s(MD5_USERNAME_PASSWORD).frame(1)
+      p().u8(1).s("welcome").ip(IP).s(MD5_PASSWORD).frame(1)
       => Err(field("Login", "is_supporter", FieldError::Truncated { needed: 1, remaining: 0 }));
     login_response_rejects_a_greeting_past_the_payload: R, p().u8(1).u32(100).raw(b"abc").frame(1)
       => Err(field("Login", "greeting", FieldError::Truncated { needed: 100, remaining: 3 }));
