@@ -123,6 +123,8 @@ family! {
       UserPrivileges(UserPrivilegesRequest),
       GivePrivileges(GivePrivileges),
       /// Deprecated.
+      NotifyPrivileges(NotifyPrivileges),
+      /// Deprecated.
       AcknowledgeNotifyPrivileges(AcknowledgeNotifyPrivileges),
       BranchLevel(BranchLevel),
       BranchRoot(BranchRoot),
@@ -240,6 +242,8 @@ family! {
       ///
       /// Deprecated.
       NotifyPrivileges(NotifyPrivileges),
+      /// Deprecated.
+      AcknowledgeNotifyPrivileges(AcknowledgeNotifyPrivileges),
       /// Instruction to reset distributed connections.
       ///
       /// Tells the client to drop every distributed connection and look for a new parent.

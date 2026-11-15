@@ -70,7 +70,7 @@ wire_struct! {
 wire_struct! {
   /// Notification that a user gave the client privileges.
   ///
-  /// Server code 124. Sent by the server.
+  /// Server code 124. Sent by the server. The client-to-server direction has the same layout.
   ///
   /// Acknowledged with [`AcknowledgeNotifyPrivileges`].
   ///
@@ -84,7 +84,7 @@ wire_struct! {
 wire_struct! {
   /// Acknowledgement of a [`NotifyPrivileges`].
   ///
-  /// Server code 125. Sent by the client.
+  /// Server code 125. Sent by the client. The server-to-client direction has the same layout.
   ///
   /// Deprecated together with [`NotifyPrivileges`].
   pub struct AcknowledgeNotifyPrivileges {
@@ -112,7 +112,11 @@ pub(crate) mod tests {
       Q::GivePrivileges(GivePrivileges { username: "bob".into(), days: 30 }) => p().s("bob").u32(30).frame(123);
     notify_privileges_response:
       R::NotifyPrivileges(NotifyPrivileges { id: 4, username: "bob".into() }) => p().u32(4).s("bob").frame(124);
+    notify_privileges_request:
+      Q::NotifyPrivileges(NotifyPrivileges { id: 4, username: "bob".into() }) => p().u32(4).s("bob").frame(124);
     acknowledge_notify_privileges_request:
       Q::AcknowledgeNotifyPrivileges(AcknowledgeNotifyPrivileges { id: 6 }) => p().u32(6).frame(125);
+    acknowledge_notify_privileges_response:
+      R::AcknowledgeNotifyPrivileges(AcknowledgeNotifyPrivileges { id: 6 }) => p().u32(6).frame(125);
   }
 }
