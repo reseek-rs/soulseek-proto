@@ -13,10 +13,8 @@ use crate::error::FieldError;
 use crate::frame::{self, FrameKind};
 use crate::init::InitMessage;
 use crate::limits::Limits;
-use crate::model::{FileAttributeType, TransferDirection};
-use crate::peer::{
-  self, PeerMessage, TransferRequest, peek_folder_contents_token, peek_search_response,
-};
+use crate::model::FileAttributeType;
+use crate::peer::{self, PeerMessage, peek_folder_contents_token, peek_search_response};
 use crate::server::{ServerRequest, ServerResponse};
 use crate::testing::zlib as compress;
 use crate::wire::{RemoteFilename, Secret, Writer};
@@ -82,31 +80,6 @@ impl Arbitrary for FileAttributeType {
       (6..=u32::MAX).prop_map(Self::Unknown),
     ]
     .boxed()
-  }
-}
-
-impl Arbitrary for TransferRequest {
-  type Parameters = ();
-  type Strategy = BoxedStrategy<Self>;
-
-  /// a download request never carries a size
-  fn arbitrary_with((): ()) -> Self::Strategy {
-    (
-      any::<TransferDirection>(),
-      any::<u32>(),
-      any::<RemoteFilename>(),
-      any::<Option<u64>>(),
-    )
-      .prop_map(|(direction, token, filename, file_size)| Self {
-        direction,
-        token,
-        filename,
-        file_size: match direction {
-          TransferDirection::Upload => file_size,
-          TransferDirection::Download => None,
-        },
-      })
-      .boxed()
   }
 }
 

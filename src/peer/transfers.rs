@@ -3,9 +3,8 @@
 //! Requests, queueing, queue places and refusals.
 
 use crate::codec::{Wire, wire_struct};
-use crate::error::DecodeError;
+use crate::error::{DecodeError, FieldError};
 use crate::log::KeyFields;
-use crate::model::TransferDirection;
 use crate::wire::{Reader, RemoteFilename, Writer};
 
 /// Download request or upload announcement.
@@ -13,50 +12,83 @@ use crate::wire::{Reader, RemoteFilename, Writer};
 /// Peer code 40. Either a request to download a file, or an announcement by the uploader that it
 /// is about to send one.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TransferRequest {
-  pub direction: TransferDirection,
-  /// Token chosen by the sender.
-  pub token: u32,
-  pub filename: RemoteFilename,
-  /// Size of the file.
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
+pub enum TransferRequest {
+  /// The sender wants to receive the file.
   ///
-  /// Carried only by an upload announcement (`direction == Upload`), and missing there from very
-  /// old clients. Never written or read for a download request.
-  pub file_size: Option<u64>,
+  /// Direction 0. A size some clients write after the filename is ignored.
+  Download {
+    /// Token chosen by the sender.
+    token: u32,
+    filename: RemoteFilename,
+  },
+  /// The sender is about to send the file.
+  ///
+  /// Direction 1.
+  Upload {
+    /// Token chosen by the sender.
+    token: u32,
+    filename: RemoteFilename,
+    /// Size of the file, in bytes.
+    ///
+    /// Missing from very old clients.
+    file_size: Option<u64>,
+  },
+}
+
+impl TransferRequest {
+  /// Returns the token chosen by the sender.
+  pub fn token(&self) -> u32 {
+    match self {
+      Self::Download { token, .. } | Self::Upload { token, .. } => *token,
+    }
+  }
+
+  /// Returns the file the request is about.
+  pub fn filename(&self) -> &RemoteFilename {
+    match self {
+      Self::Download { filename, .. } | Self::Upload { filename, .. } => filename,
+    }
+  }
 }
 
 impl Wire for TransferRequest {
   const MIN_BYTES: usize = 12;
 
   fn read(r: &mut Reader, _field: &'static str) -> Result<Self, DecodeError> {
-    let direction = TransferDirection::read(r, "direction")?;
+    let direction = r.u32("direction")?;
     let token = r.u32("token")?;
     let filename = r.filename("filename")?;
-    // some clients write a size on a download request too; it is ignored
-    let file_size = match direction {
-      TransferDirection::Upload => r.optional_fixed("file_size")?,
-      TransferDirection::Download => None,
-    };
-    Ok(Self {
-      direction,
-      token,
-      filename,
-      file_size,
-    })
+    match direction {
+      0 => Ok(Self::Download { token, filename }),
+      1 => Ok(Self::Upload {
+        token,
+        filename,
+        file_size: r.optional_fixed("file_size")?,
+      }),
+      value => Err(r.fail("direction", FieldError::InvalidValue { value })),
+    }
   }
 
   fn write(&self, w: &mut Writer) {
-    self.direction.write(w);
-    w.u32(self.token);
-    w.filename(&self.filename);
-    if let (TransferDirection::Upload, Some(file_size)) = (self.direction, self.file_size) {
-      w.u64(file_size);
+    w.u32(match self {
+      Self::Download { .. } => 0,
+      Self::Upload { .. } => 1,
+    });
+    w.u32(self.token());
+    w.filename(self.filename());
+    if let Self::Upload {
+      file_size: Some(file_size),
+      ..
+    } = self
+    {
+      w.u64(*file_size);
     }
   }
 
   fn log<'a>(&'a self, _name: &'static str, fields: &mut KeyFields<'a>) {
-    fields.filename = Some(self.filename.as_str());
-    fields.token = Some(self.token);
+    fields.filename = Some(self.filename().as_str());
+    fields.token = Some(self.token());
   }
 }
 
@@ -199,19 +231,16 @@ wire_struct! {
 #[cfg(test)]
 pub(crate) mod tests {
   use super::*;
-  use crate::error::FieldError;
   use crate::peer::PeerMessage;
   use crate::testing::{decodes, field, p, vectors};
 
   vectors! {
     transfer_request_download:
-      PeerMessage::TransferRequest(TransferRequest {
-        direction: TransferDirection::Download, token: 5, filename: "@@share\\a.mp3".into(), file_size: None,
-      })
+      PeerMessage::TransferRequest(TransferRequest::Download { token: 5, filename: "@@share\\a.mp3".into() })
       => p().u32(0).u32(5).s("@@share\\a.mp3").frame(40);
     transfer_request_upload:
-      PeerMessage::TransferRequest(TransferRequest {
-        direction: TransferDirection::Upload, token: 5, filename: "@@share\\a.mp3".into(), file_size: Some(5_242_880),
+      PeerMessage::TransferRequest(TransferRequest::Upload {
+        token: 5, filename: "@@share\\a.mp3".into(), file_size: Some(5_242_880),
       })
       => p().u32(1).u32(5).s("@@share\\a.mp3").u64(5_242_880).frame(40);
     transfer_response_allowed_with_size:
@@ -242,13 +271,11 @@ pub(crate) mod tests {
 
   decodes! {
     transfer_request_download_ignores_a_stray_size: PeerMessage, p().u32(0).u32(5).s("a.mp3").u64(0).frame(40)
-      => Ok(PeerMessage::TransferRequest(TransferRequest {
-        direction: TransferDirection::Download, token: 5, filename: "a.mp3".into(), file_size: None,
-      }));
+      => Ok(PeerMessage::TransferRequest(TransferRequest::Download { token: 5, filename: "a.mp3".into() }));
     transfer_request_upload_without_size: PeerMessage, p().u32(1).u32(5).s("a.mp3").frame(40)
-      => Ok(PeerMessage::TransferRequest(TransferRequest {
-        direction: TransferDirection::Upload, token: 5, filename: "a.mp3".into(), file_size: None,
-      }));
+      => Ok(PeerMessage::TransferRequest(TransferRequest::Upload { token: 5, filename: "a.mp3".into(), file_size: None }));
+    transfer_request_rejects_an_unknown_direction: PeerMessage, p().u32(2).u32(5).s("a.mp3").frame(40)
+      => Err(field("TransferRequest", "direction", FieldError::InvalidValue { value: 2 }));
     transfer_response_allowed_must_be_exactly_one: PeerMessage, p().u32(5).u8(2).s("Cancelled").frame(41)
       => Ok(PeerMessage::TransferResponse(TransferResponse::Denied { token: 5, message: "Cancelled".into() }));
     transfer_response_denied_needs_a_message: PeerMessage, p().u32(5).u8(0).frame(41)

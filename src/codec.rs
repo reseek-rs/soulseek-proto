@@ -7,9 +7,7 @@ use std::net::Ipv4Addr;
 
 use crate::error::DecodeError;
 use crate::log::KeyFields;
-use crate::model::{
-  FileAttributeType, PeerConnectionType, RoomType, TransferDirection, UserPresence,
-};
+use crate::model::{FileAttributeType, PeerConnectionType, RoomType, UserPresence};
 use crate::wire::{Reader, RemoteFilename, Secret, Writer};
 
 /// A value with one wire layout, read and written in the same place
@@ -189,18 +187,6 @@ impl<T: Wire> Wire for Vec<T> {
 }
 
 impl Wire for UserPresence {
-  const MIN_BYTES: usize = 4;
-
-  fn read(r: &mut Reader, field: &'static str) -> Result<Self, DecodeError> {
-    Self::from_u32(r.u32(field)?).map_err(|error| r.fail(field, error))
-  }
-
-  fn write(&self, w: &mut Writer) {
-    w.u32(*self as u32);
-  }
-}
-
-impl Wire for TransferDirection {
   const MIN_BYTES: usize = 4;
 
   fn read(r: &mut Reader, field: &'static str) -> Result<Self, DecodeError> {

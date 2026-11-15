@@ -31,29 +31,6 @@ impl UserPresence {
   }
 }
 
-/// Direction of a transfer.
-///
-/// The direction in which a [`TransferRequest`](crate::peer::TransferRequest) moves its file, as
-/// seen from the sender of the request.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
-pub enum TransferDirection {
-  /// The sender wants to receive the file.
-  Download = 0,
-  /// The sender is about to send the file.
-  Upload = 1,
-}
-
-impl TransferDirection {
-  pub(crate) fn from_u32(value: u32) -> Result<Self, FieldError> {
-    match value {
-      0 => Ok(Self::Download),
-      1 => Ok(Self::Upload),
-      _ => Err(FieldError::InvalidValue { value }),
-    }
-  }
-}
-
 /// Type of a room.
 ///
 /// The type of room that a [`JoinRoomRequest`](crate::server::JoinRoomRequest) creates when the
