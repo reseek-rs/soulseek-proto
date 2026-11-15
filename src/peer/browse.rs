@@ -355,7 +355,6 @@ pub fn peek_folder_contents_token(bytes: &[u8], limits: &Limits) -> Result<u32, 
 #[cfg(test)]
 pub(crate) mod tests {
   use super::*;
-  use crate::limits::LIMIT_DIRECTORIES_PER_RESPONSE;
   use crate::peer::PeerMessage;
   use crate::testing::{P, decodes, field, p, vectors};
 
@@ -518,21 +517,23 @@ pub(crate) mod tests {
 
   #[test]
   fn browse_response_directory_limit_counts_every_list() {
-    let mut body = p().u32(LIMIT_DIRECTORIES_PER_RESPONSE as u32);
-    for _ in 0..LIMIT_DIRECTORIES_PER_RESPONSE {
+    let limits = Limits {
+      directories_per_response: 3,
+      ..Limits::DEFAULT
+    };
+    let mut body = p().u32(3);
+    for _ in 0..3 {
       body = body.s("").u32(0);
     }
     let frame = body.u32(0).u32(1).s("").u32(0).zframe(5);
     assert_eq!(
-      PeerMessage::decode(&frame),
+      PeerMessage::decode_with(&frame, &limits),
       Err(field(
         "BrowseResponse",
         "locked_directories",
-        FieldError::LimitExceeded {
-          value: LIMIT_DIRECTORIES_PER_RESPONSE as u64 + 1,
-          limit: LIMIT_DIRECTORIES_PER_RESPONSE as u64,
-        }
+        FieldError::LimitExceeded { value: 4, limit: 3 }
       ))
     );
+    assert!(PeerMessage::decode(&frame).is_ok());
   }
 }

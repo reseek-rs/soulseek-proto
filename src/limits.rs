@@ -61,7 +61,8 @@ pub const LIMIT_FILES_PER_RESPONSE: usize = 5_000_000;
 pub const LIMIT_FILES_PER_SEARCH_RESPONSE: usize = 10_000;
 /// Maximum number of directories in one response.
 ///
-/// The count is the total over one browse or folder response.
+/// The count is the total over one browse or folder response. This is the default of
+/// [`Limits::directories_per_response`].
 pub const LIMIT_DIRECTORIES_PER_RESPONSE: usize = 4_000_000;
 /// Maximum `n_attributes` of one file.
 pub const LIMIT_ATTRIBUTES_PER_FILE: usize = 64;
@@ -87,6 +88,10 @@ pub struct Limits {
   ///
   /// The count is the total over the response, locked files included.
   pub files_per_search_response: usize,
+  /// Maximum number of directories in one browse or folder response.
+  ///
+  /// The count is the total over the response.
+  pub directories_per_response: usize,
 }
 
 impl Limits {
@@ -98,6 +103,7 @@ impl Limits {
     inflated_search_bytes: LIMIT_INFLATED_SEARCH_BYTES,
     files_per_response: LIMIT_FILES_PER_RESPONSE,
     files_per_search_response: LIMIT_FILES_PER_SEARCH_RESPONSE,
+    directories_per_response: LIMIT_DIRECTORIES_PER_RESPONSE,
   };
 
   /// Returns the largest accepted frame `len` for `kind`, in bytes.

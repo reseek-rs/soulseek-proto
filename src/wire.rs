@@ -9,9 +9,7 @@ use std::net::Ipv4Addr;
 use crate::codec::Wire;
 use crate::error::{DecodeError, FieldError};
 use crate::frame::FrameKind;
-use crate::limits::{
-  LIMIT_DESCRIPTION_BYTES, LIMIT_DIRECTORIES_PER_RESPONSE, LIMIT_STRING_BYTES, Limits,
-};
+use crate::limits::{LIMIT_DESCRIPTION_BYTES, LIMIT_STRING_BYTES, Limits};
 
 /// Path as a peer sent it.
 ///
@@ -161,7 +159,7 @@ impl<'a> Reader<'a> {
       message,
       file_limit: limits.files_per_response,
       files_left: limits.files_per_response,
-      directories_left: LIMIT_DIRECTORIES_PER_RESPONSE,
+      directories_left: limits.directories_per_response,
     }
   }
 
@@ -212,7 +210,7 @@ impl<'a> Reader<'a> {
     count: usize,
     field: &'static str,
   ) -> Result<(), DecodeError> {
-    let limit = LIMIT_DIRECTORIES_PER_RESPONSE;
+    let limit = self.limits.directories_per_response;
     let Some(left) = self.directories_left.checked_sub(count) else {
       return Err(self.fail(
         field,
