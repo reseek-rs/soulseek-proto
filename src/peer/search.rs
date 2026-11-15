@@ -1,4 +1,6 @@
-//! Search requests between peers and the compressed search response.
+//! Peer search messages.
+//!
+//! Search requests sent between peers, and the compressed search response.
 
 use super::browse::{File, read_files};
 use super::{peek, read_compressed, write_compressed};
@@ -10,27 +12,35 @@ use crate::log::KeyFields;
 use crate::wire::{Reader, Writer};
 
 wire_struct! {
-  /// Peer code 8: a search of our shares sent directly by a peer. Obsolete, still answered.
+  /// Search of the client's shares.
+  ///
+  /// Peer code 8. Sent directly by a peer.
+  ///
+  /// Obsolete, but still answered.
   pub struct SearchRequest {
     pub token: u32,
     pub query: String,
   }
 }
 
-/// Peer code 9: the files a peer has that match one of our searches, zlib-compressed.
+/// Files of a peer that match a search.
+///
+/// Peer code 9. Holds the files that match one of the client's searches. Compressed with zlib.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct SearchResponse {
-  /// the responder's username
+  /// Username of the responding peer.
   pub username: String,
   pub token: u32,
   #[cfg_attr(test, proptest(strategy = "crate::proptests::small_vec::<File>()"))]
   pub files: Vec<File>,
   pub has_free_upload_slot: bool,
-  /// bytes/second
+  /// Upload speed, in bytes per second.
   pub upload_speed: u32,
   pub queue_length: u32,
-  /// files shared only with selected users, not downloadable
+  /// Files that cannot be downloaded.
+  ///
+  /// Shared only with selected users.
   #[cfg_attr(test, proptest(strategy = "crate::proptests::small_vec::<File>()"))]
   pub locked_files: Vec<File>,
 }
@@ -88,8 +98,15 @@ impl Wire for SearchResponse {
   }
 }
 
-/// Inflates only the `username` and `token` that start a `SearchResponse` frame, so a response
-/// whose token is not a live search can be dropped before the rest is inflated
+/// Inflates only the start of a [`SearchResponse`] frame.
+///
+/// Reads the `username` and `token` at the start of the frame, so that a response whose token
+/// does not belong to a live search can be dropped before the rest is inflated.
+///
+/// # Errors
+///
+/// Returns a [`DecodeError`] if the frame is malformed or exceeds `limits`, if its code is not
+/// that of a [`SearchResponse`], or if the username and token cannot be inflated and read.
 pub fn peek_search_response(bytes: &[u8], limits: &Limits) -> Result<(String, u32), DecodeError> {
   peek(bytes, limits, PeerCode::SearchResponse, |prefix, limits| {
     let message = PeerCode::SearchResponse.name();

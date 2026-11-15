@@ -1,27 +1,34 @@
-//! The user info a peer shows about itself.
+//! User info messages.
+//!
+//! The user info that a peer shows about itself.
 
 use crate::codec::Wire;
 use crate::error::{DecodeError, FieldError};
 use crate::limits::LIMIT_USER_INFO_PICTURE_BYTES;
 use crate::wire::{Reader, Writer};
 
-/// Peer code 16: the peer's description, picture and upload slots, in reply to `InfoRequest`.
+/// Description, picture and upload slots of a peer.
+///
+/// Peer code 16. Sent by the peer in reply to
+/// [`InfoRequest`](super::PeerMessage::InfoRequest).
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserInfo {
   pub description: String,
-  /// raw image file bytes
+  /// Raw bytes of the image file.
   pub picture: Option<Vec<u8>>,
   pub upload_slots: u32,
   pub queue_length: u32,
   pub has_free_upload_slot: bool,
-  /// who may upload to this user: 0 no one, 1 everyone, 2 users in their list, 3 permitted
-  /// users; absent from SoulseekQt
+  /// Who may upload to this user.
+  ///
+  /// 0 for no one, 1 for everyone, 2 for users in the user's list, 3 for permitted users. Absent
+  /// from SoulseekQt messages.
   pub upload_permitted: Option<u32>,
 }
 
 impl UserInfo {
-  /// the peer sent a picture
+  /// Returns `true` if the peer sent a picture.
   pub fn has_picture(&self) -> bool {
     self.picture.is_some()
   }

@@ -1,16 +1,20 @@
-//! The enumerations messages carry, and the parsing of a free-text search query.
+//! Data model shared by messages.
+//!
+//! Enumerations carried by messages, and the parsing of a free-text search query.
 
 use crate::error::FieldError;
 
-/// A user's online state, as `GetStatus` and the room messages report it
+/// Online state of a user.
+///
+/// Reported by `GetStatus` and the room messages.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum UserPresence {
-  /// not logged in
+  /// Not logged in.
   Offline = 0,
-  /// logged in and marked away
+  /// Logged in and marked away.
   Away = 1,
-  /// logged in and not away
+  /// Logged in and not away.
   Online = 2,
 }
 
@@ -25,13 +29,16 @@ impl UserPresence {
   }
 }
 
-/// Which way a `TransferRequest` moves its file, seen from the sender of the request
+/// Direction of a transfer.
+///
+/// The direction in which a [`TransferRequest`](crate::peer::TransferRequest) moves its file, as
+/// seen from the sender of the request.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum TransferDirection {
-  /// the sender wants to receive the file
+  /// The sender wants to receive the file.
   Download = 0,
-  /// the sender is about to send the file
+  /// The sender is about to send the file.
   Upload = 1,
 }
 
@@ -45,13 +52,16 @@ impl TransferDirection {
   }
 }
 
-/// The room type a `JoinRoom` request creates when the room does not exist yet
+/// Type of a room.
+///
+/// The type of room that a [`JoinRoomRequest`](crate::server::JoinRoomRequest) creates when the
+/// room does not exist yet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum RoomType {
-  /// anyone can join
+  /// Anyone can join.
   Public = 0,
-  /// only members the owner or an operator added can join
+  /// Only members added by the owner or an operator can join.
   Private = 1,
 }
 
@@ -65,15 +75,18 @@ impl RoomType {
   }
 }
 
-/// The one-character connection type of `PeerInit` and `ConnectToPeer`
+/// Type of a peer connection.
+///
+/// A one-character connection type, carried by [`PeerInit`](crate::init::PeerInit) and
+/// `ConnectToPeer`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum PeerConnectionType {
-  /// `"P"`, peer messages
+  /// `"P"`: peer messages.
   Peer,
-  /// `"F"`, raw file bytes
+  /// `"F"`: raw file bytes.
   Transfer,
-  /// `"D"`, the distributed search tree
+  /// `"D"`: the distributed search tree.
   Distributed,
 }
 
@@ -96,21 +109,23 @@ impl PeerConnectionType {
   }
 }
 
-/// `3` (encoder) is obsolete and decodes as `Unknown(3)`, as do values from third-party clients,
-/// so an attribute list re-encodes unchanged
+/// Type of a file attribute.
+///
+/// The value `3` (encoder) is obsolete and decodes as [`Unknown(3)`](Self::Unknown), as do values
+/// from third-party clients, so that an attribute list re-encodes unchanged.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum FileAttributeType {
-  /// kbit/s
+  /// Bit rate, in kilobits per second.
   BitRate,
-  /// seconds, truncated
+  /// Duration, in seconds, truncated.
   Duration,
-  /// 0 or 1
+  /// Variable bit rate flag, 0 or 1.
   VariableBitRate,
-  /// Hz
+  /// Sample rate, in hertz.
   SampleRate,
-  /// bits
+  /// Bit depth, in bits.
   BitDepth,
-  /// any other type
+  /// Any other type.
   Unknown(u32),
 }
 
@@ -138,18 +153,24 @@ impl FileAttributeType {
   }
 }
 
-/// A free-text search query split into terms and exclusions
+/// Free-text search query split into terms and exclusions.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SearchQuery {
-  /// in order, including a lone `-`
+  /// Terms in order, including a lone `-`.
   pub terms: Vec<String>,
-  /// leading `-`s stripped, duplicates removed; matched case-insensitively
+  /// Exclusions, without their leading `-` characters.
+  ///
+  /// Duplicates are removed. Matched case-insensitively.
   pub exclusions: Vec<String>,
 }
 
 impl SearchQuery {
-  /// splits on runs of whitespace; a token longer than one character that starts with `-` is an
-  /// exclusion, anything else a term
+  /// Parses a free-text query.
+  ///
+  /// Splits the text on runs of whitespace.
+  ///
+  /// A token longer than one character that starts with `-` is an exclusion. Any other token is
+  /// a term.
   pub fn parse(text: &str) -> Self {
     let mut query = Self::default();
     for token in text.split_whitespace() {
@@ -165,12 +186,16 @@ impl SearchQuery {
     query
   }
 
-  /// the terms joined with single spaces, without the exclusions
+  /// Returns the terms joined with single spaces.
+  ///
+  /// The exclusions are left out.
   pub fn query(&self) -> String {
     self.terms.join(" ")
   }
 
-  /// the terms, then each exclusion with a leading `-`: the text a search request sends
+  /// Returns the text a search request sends.
+  ///
+  /// The terms, followed by each exclusion with a leading `-`.
   pub fn search_text(&self) -> String {
     let mut text = self.query();
     for exclusion in &self.exclusions {

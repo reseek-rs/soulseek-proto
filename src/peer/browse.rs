@@ -1,5 +1,7 @@
-//! Browsing a peer's shares and one of its folders, and the `File` and `Directory` layouts every
-//! compressed response shares.
+//! Share browsing and folder contents.
+//!
+//! Browsing of a peer's shares and of one of its folders, and the [`File`] and [`Directory`]
+//! layouts shared by every compressed response.
 
 use super::{peek, read_compressed, write_compressed};
 use crate::codec::{Wire, wire_struct};
@@ -11,26 +13,34 @@ use crate::model::FileAttributeType;
 use crate::wire::{Reader, RemoteFilename, Writer};
 
 wire_struct! {
-  /// One typed value of a shared file, such as its bit rate or duration
+  /// Typed value of a shared file.
+  ///
+  /// Holds a value such as the bit rate or duration.
   pub struct FileAttribute {
     pub attribute_type: FileAttributeType,
     pub value: u32,
   }
 }
 
-/// A shared file. In search responses `filename` is the full remote path, in browse and folder
-/// responses the bare name inside its directory.
+/// A shared file.
+///
+/// In search responses, `filename` is the full remote path. In browse and folder responses, it is
+/// the bare name within its directory.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct File {
-  /// kept as received and written back unchanged
+  /// Kept as received and written back unchanged.
   pub code: u8,
   pub filename: RemoteFilename,
   #[cfg_attr(test, proptest(strategy = "crate::proptests::file_size()"))]
   pub size: u64,
-  /// as the sharer computed it, often blank; derive the extension from the filename instead
+  /// Extension as computed by the sharer.
+  ///
+  /// Often blank. [`File::derived_extension`] derives the extension from the filename instead.
   pub extension: String,
-  /// in wire order; this list, not the typed getters, is what re-encodes
+  /// Attributes in wire order.
+  ///
+  /// This list, not the typed getters, is what is re-encoded.
   #[cfg_attr(
     test,
     proptest(strategy = "crate::proptests::small_vec::<FileAttribute>()")
@@ -39,13 +49,17 @@ pub struct File {
 }
 
 impl File {
-  /// how many attributes the file carries, unknown types included
+  /// Returns the number of attributes of the file.
+  ///
+  /// Attributes of unknown types are counted.
   pub fn attribute_count(&self) -> usize {
     self.attributes.len()
   }
 
-  /// The extension the filename gives: what follows the last `.` of the last path component,
-  /// lower-cased, or empty when there is none. `extension` is often blank or wrong.
+  /// Returns the extension given by the filename.
+  ///
+  /// The extension is the text after the last `.` of the last path component, in lowercase, or
+  /// an empty string if there is none. The `extension` field is often blank or wrong.
   pub fn derived_extension(&self) -> String {
     let path = self.filename.as_str();
     let name = path.rsplit_once(['\\', '/']).map_or(path, |(_, name)| name);
@@ -65,29 +79,29 @@ impl File {
       .map(|a| a.value)
   }
 
-  /// kbit/s
+  /// Returns the bit rate, in kilobits per second.
   pub fn bit_rate(&self) -> Option<u32> {
     self.attribute(FileAttributeType::BitRate)
   }
 
-  /// seconds
+  /// Returns the duration, in seconds.
   pub fn length(&self) -> Option<u32> {
     self.attribute(FileAttributeType::Duration)
   }
 
-  /// whether the bit rate varies over the file
+  /// Returns whether the bit rate varies over the file.
   pub fn is_variable_bit_rate(&self) -> Option<bool> {
     self
       .attribute(FileAttributeType::VariableBitRate)
       .map(|v| v != 0)
   }
 
-  /// Hz
+  /// Returns the sample rate, in hertz.
   pub fn sample_rate(&self) -> Option<u32> {
     self.attribute(FileAttributeType::SampleRate)
   }
 
-  /// bits per sample
+  /// Returns the bit depth, in bits per sample.
   pub fn bit_depth(&self) -> Option<u32> {
     self.attribute(FileAttributeType::BitDepth)
   }
@@ -149,18 +163,18 @@ pub(super) fn read_files(r: &mut Reader, field: &'static str) -> Result<Vec<File
   (0..count).map(|_| File::read(r, field)).collect()
 }
 
-/// A shared directory and the files directly in it
+/// Shared directory and the files directly within it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Directory {
-  /// the full remote path with the peer's separator
+  /// Full remote path, with the peer's separator.
   pub name: RemoteFilename,
   #[cfg_attr(test, proptest(strategy = "crate::proptests::small_vec::<File>()"))]
   pub files: Vec<File>,
 }
 
 impl Directory {
-  /// how many files the directory holds
+  /// Returns the number of files in the directory.
   pub fn file_count(&self) -> usize {
     self.files.len()
   }
@@ -189,7 +203,10 @@ fn read_directories(r: &mut Reader, field: &'static str) -> Result<Vec<Directory
   (0..count).map(|_| Directory::read(r, field)).collect()
 }
 
-/// Peer code 5: the peer's whole share listing, zlib-compressed, in reply to `BrowseRequest`.
+/// Entire share listing of a peer.
+///
+/// Peer code 5. Sent by the peer in reply to
+/// [`BrowseRequest`](super::PeerMessage::BrowseRequest). Compressed with zlib.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct BrowseResponse {
@@ -198,7 +215,7 @@ pub struct BrowseResponse {
     proptest(strategy = "crate::proptests::small_vec::<Directory>()")
   )]
   pub directories: Vec<Directory>,
-  /// shown but not downloadable
+  /// Directories that are shown but cannot be downloaded.
   #[cfg_attr(
     test,
     proptest(strategy = "crate::proptests::small_vec::<Directory>()")
@@ -242,22 +259,30 @@ impl Wire for BrowseResponse {
 }
 
 wire_struct! {
-  /// Peer code 36: asks for the files of one directory of the peer's shares.
+  /// Request for the files of one shared directory.
+  ///
+  /// Peer code 36. Asks for one directory in the peer's shares.
   pub struct FolderContentsRequest {
     pub token: u32,
-    /// the remote directory path exactly as it appeared in a browse or search
+    /// Remote directory path.
+    ///
+    /// Exactly as it appeared in a browse or search.
     pub directory_name: RemoteFilename,
   }
 }
 
-/// Peer code 37: the files of the directory a `FolderContentsRequest` asked for, zlib-compressed.
+/// Files of a requested directory.
+///
+/// Peer code 37. Sent in reply to a [`FolderContentsRequest`]. Compressed with zlib.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct FolderContentsResponse {
   pub token: u32,
-  /// echoed from the request
+  /// Directory name, echoed from the request.
   pub directory_name: RemoteFilename,
-  /// the requested directory, and in some clients each subdirectory as a further entry
+  /// Requested directory.
+  ///
+  /// Some clients add each of its subdirectories as a further entry.
   #[cfg_attr(
     test,
     proptest(strategy = "crate::proptests::small_vec::<Directory>()")
@@ -297,8 +322,15 @@ impl Wire for FolderContentsResponse {
   }
 }
 
-/// Inflates only the `token` that starts a `FolderContentsResponse` frame, so a response nobody
-/// asked for can be dropped before the rest is inflated
+/// Inflates only the token of a [`FolderContentsResponse`] frame.
+///
+/// Reads the `token` at the start of the frame, so that a response that was never requested can
+/// be dropped before the rest is inflated.
+///
+/// # Errors
+///
+/// Returns a [`DecodeError`] if the frame is malformed or exceeds `limits`, if its code is not
+/// that of a [`FolderContentsResponse`], or if the token cannot be inflated and read.
 pub fn peek_folder_contents_token(bytes: &[u8], limits: &Limits) -> Result<u32, DecodeError> {
   peek(
     bytes,

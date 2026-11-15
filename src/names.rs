@@ -1,10 +1,15 @@
-//! Rules for usernames and room names that are checked locally, before the server or a peer
-//! would reject them.
+//! Rules for usernames and room names.
+//!
+//! The names are checked locally before the server or a peer would reject them.
 
-/// The pseudo-user the server sends its own notices as
+/// Pseudo-user name of the server's own notices.
+///
+/// The server sends its own notices under this name.
 pub const SERVER_USERNAME: &str = "server";
 
-/// Why the server would reject a login username, mirroring its `INVALIDUSERNAME` details
+/// Reason the server would reject a login username.
+///
+/// Mirrors the server's `INVALIDUSERNAME` details.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum LoginUsernameError {
   #[error("username is empty")]
@@ -19,8 +24,14 @@ pub enum LoginUsernameError {
   Reserved,
 }
 
-/// The server's rules for the username in `Login`: 1 to 30 printable ascii characters, no
-/// leading or trailing space, not the reserved name `server`
+/// Checks a username for `Login` against the server's rules.
+///
+/// The rules are 1 to 30 printable ASCII characters, no leading or trailing space, and not the
+/// reserved name `server`.
+///
+/// # Errors
+///
+/// Returns a [`LoginUsernameError`] naming a rule the username breaks.
 pub fn validate_login_username(username: &str) -> Result<(), LoginUsernameError> {
   if username.is_empty() {
     return Err(LoginUsernameError::Empty);
@@ -40,8 +51,9 @@ pub fn validate_login_username(username: &str) -> Result<(), LoginUsernameError>
   Ok(())
 }
 
-/// Why the server would reject a room name in `JoinRoom`, written as the reason that follows
-/// "Invalid room name: "
+/// Reason the server would reject a room name in `JoinRoom`.
+///
+/// Each variant displays as the reason that follows "Invalid room name: ".
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum RoomNameError {
   #[error("it is empty")]
@@ -56,9 +68,15 @@ pub enum RoomNameError {
   ConsecutiveSpaces,
 }
 
-/// The server's rules for a room name in `JoinRoom`: 1 to 24 printable ascii characters, no
-/// space at either end and no two in a row. A name that breaks them gets a private message from
-/// `server` and no reply at all, so it is checked before sending.
+/// Checks a room name for `JoinRoom` against the server's rules.
+///
+/// The rules are 1 to 24 printable ASCII characters, no space at either end and no two spaces in a
+/// row. The server answers a name that breaks these rules only with a private message from
+/// `server`, so the name is checked before sending.
+///
+/// # Errors
+///
+/// Returns a [`RoomNameError`] naming a rule the room name breaks.
 pub fn validate_room_name(room: &str) -> Result<(), RoomNameError> {
   if room.is_empty() {
     return Err(RoomNameError::Empty);

@@ -1,6 +1,9 @@
-//! Messages on a `P` connection between two clients, the same layout in both directions. Each
-//! message lives in the file of its topic; this file holds the catalog and the zlib handling that
-//! browse, search and folder responses share, since each of them is one zlib stream after the code.
+//! Peer messages.
+//!
+//! Messages on a `P` connection between two clients, with the same layout in both directions.
+//! Each message is defined in the module of its topic. This module holds the catalogue and the
+//! zlib handling shared by browse, search and folder responses, each of which is a single zlib
+//! stream following the code.
 
 pub(crate) mod browse;
 pub(crate) mod info;
@@ -26,41 +29,52 @@ use crate::log;
 use crate::wire::{Reader, Writer};
 
 family! {
-  /// Every message two clients exchange on a `P` connection
+  /// Message exchanged between two clients on a `P` connection.
   pub enum PeerMessage {
     code: PeerCode,
     frame: Peer,
     label: "peer",
     quiet: [],
     messages: {
-      /// asks for the peer's whole share listing
+      /// Request for the peer's entire share listing.
       BrowseRequest,
       BrowseResponse(BrowseResponse),
-      /// obsolete, still answered
+      /// Obsolete.
       SearchRequest(SearchRequest),
       SearchResponse(SearchResponse),
-      /// asks for the peer's user info
+      /// Request for the peer's user info.
       InfoRequest,
       InfoResponse(UserInfo),
       FolderContentsRequest(FolderContentsRequest),
       FolderContentsResponse(FolderContentsResponse),
       TransferRequest(TransferRequest),
       TransferResponse(TransferResponse),
-      /// obsolete
+      /// Obsolete.
       UploadPlacehold(UploadPlacehold),
       QueueDownload(QueueDownload),
       PlaceInQueueResponse(PlaceInQueueResponse),
       UploadFailed(UploadFailed),
       UploadDenied(UploadDenied),
       PlaceInQueueRequest(PlaceInQueueRequest),
-      /// deprecated, empty; Soulseek NS sends it before uploading
+      /// Empty notice before an upload.
+      ///
+      /// Sent by Soulseek NS before uploading.
+      ///
+      /// Deprecated.
       UploadQueueNotification,
     }
   }
 }
 
 impl PeerMessage {
-  /// decodes one complete frame with configured limits
+  /// Decodes one complete frame with the given limits.
+  ///
+  /// The frame includes its length prefix.
+  ///
+  /// # Errors
+  ///
+  /// Returns a [`DecodeError`] if the frame is malformed or exceeds `limits`, if its code has no
+  /// known layout, or if its payload does not decode as the message of that code.
   pub fn decode_with(bytes: &[u8], limits: &Limits) -> Result<Self, DecodeError> {
     Self::decode_limited(bytes, limits)
   }

@@ -1,6 +1,7 @@
-//! The message code catalog of every connection kind. A code being listed here does not mean
-//! it has a codec: some peer codes have a known name but no known layout, and the decoders
-//! treat those like unknown codes.
+//! Message codes for every connection kind.
+//!
+//! A code listed here does not necessarily have a codec: some peer codes have a known name but
+//! no known layout, and the decoders treat those as unknown codes.
 
 macro_rules! codes {
   ($(#[$meta:meta])* $name:ident: $repr:ty { $($variant:ident = $value:literal,)* }) => {
@@ -15,7 +16,9 @@ macro_rules! codes {
       #[cfg(test)]
       pub(crate) const ALL: &[Self] = &[$(Self::$variant,)*];
 
-      /// `None` for a code the catalog does not know
+      /// Returns the variant for a wire value.
+      ///
+      /// Returns `None` if the catalogue does not list the code.
       pub fn from_code(code: u32) -> Option<Self> {
         match code {
           $($value => Some(Self::$variant),)*
@@ -23,12 +26,12 @@ macro_rules! codes {
         }
       }
 
-      /// the value on the wire
+      /// Returns the value of the code on the wire.
       pub fn code(self) -> u32 {
         self as u32
       }
 
-      /// the variant name, as logs and errors show it
+      /// Returns the variant name, as shown in logs and errors.
       pub fn name(self) -> &'static str {
         match self {
           $(Self::$variant => stringify!($variant),)*
@@ -39,8 +42,9 @@ macro_rules! codes {
 }
 
 codes! {
-  /// Server connection codes (`u32` on the wire). Each code's message struct carries its
-  /// description.
+  /// Message code on a server connection.
+  ///
+  /// A `u32` on the wire. The message struct of each code carries its description.
   ServerCode: u32 {
     Login = 1,
     SetListenPort = 2,
@@ -148,9 +152,10 @@ codes! {
 }
 
 codes! {
-  /// Peer connection codes (`u32` on the wire). Each code's message struct carries its
-  /// description; 1, 10, 14, 33, 34, 47, 48 and 49 have no known layout and are decoded as unknown
-  /// codes.
+  /// Message code on a peer connection.
+  ///
+  /// A `u32` on the wire. The message struct of each code carries its description. Codes 1, 10,
+  /// 14, 33, 34, 47, 48 and 49 have no known layout and are decoded as unknown codes.
   PeerCode: u32 {
     PrivateMessage = 1,
     BrowseRequest = 4,
@@ -181,8 +186,9 @@ codes! {
 }
 
 codes! {
-  /// Distributed connection codes (`u8` on the wire). Each code's message struct carries its
-  /// description.
+  /// Message code on a distributed connection.
+  ///
+  /// A `u8` on the wire. The message struct of each code carries its description.
   DistributedCode: u8 {
     Ping = 0,
     SearchRequest = 3,
@@ -194,8 +200,9 @@ codes! {
 }
 
 codes! {
-  /// Codes of the first frame on an inbound peer socket (`u8` on the wire). Each code's message
-  /// struct carries its description.
+  /// Code of the first frame on an inbound peer socket.
+  ///
+  /// A `u8` on the wire. The message struct of each code carries its description.
   InitCode: u8 {
     PierceFirewall = 0,
     PeerInit = 1,

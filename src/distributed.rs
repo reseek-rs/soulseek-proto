@@ -1,4 +1,6 @@
-//! Messages on a `D` connection in the distributed search tree, with 1-byte codes.
+//! Distributed search messages.
+//!
+//! Messages on a `D` connection in the distributed search tree, which carry 1-byte codes.
 
 use crate::codec::{Wire, family, wire_struct};
 use crate::codes::DistributedCode;
@@ -8,11 +10,15 @@ use crate::log::KeyFields;
 use crate::names::is_valid_peer_username;
 use crate::wire::{Reader, Writer};
 
-/// The constant first field of every distributed search request: ASCII `'1'`
+/// First field of every distributed search request.
+///
+/// Constant, ASCII `'1'`.
 pub const SEARCH_IDENTIFIER: u32 = 49;
 
 family! {
-  /// Every message on a `D` connection, from our parent or our children
+  /// Message on a `D` connection.
+  ///
+  /// Sent by the client's parent or one of its children.
   pub enum DistributedMessage {
     code: DistributedCode,
     frame: Distributed,
@@ -20,21 +26,24 @@ family! {
     // pings and searches are too frequent to log
     quiet: [Ping, SearchRequest, EmbeddedMessage],
     messages: {
-      /// deprecated
+      /// Deprecated.
       Ping(Ping),
       SearchRequest(SearchRequest),
       BranchLevel(BranchLevel),
       BranchRoot(BranchRoot),
-      /// obsolete, parsed and ignored
+      /// Obsolete.
       ChildDepth(ChildDepth),
-      /// deprecated: sent by parents running a SoulseekQt from before early 2026
+      /// Deprecated.
       EmbeddedMessage(EmbeddedMessage),
     }
   }
 }
 
-/// Distributed code 0: a keep-alive between a parent and a child. Deprecated: defined as empty,
-/// though some clients reply with a `u32` token.
+/// Keep-alive between a parent and a child.
+///
+/// Distributed code 0.
+///
+/// Deprecated: defined as empty, though some clients reply with a `u32` token.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Ping {
@@ -57,8 +66,10 @@ impl Wire for Ping {
   }
 }
 
-/// Distributed code 3: a search passed down the tree, which we forward to our children and answer.
-/// Written with the identifier 49; any other identifier is rejected.
+/// Search passed down the tree.
+///
+/// Distributed code 3. The receiving child forwards it to its own children and answers it.
+/// Written with the identifier 49 ([`SEARCH_IDENTIFIER`]). Any other identifier is rejected.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct SearchRequest {
@@ -95,8 +106,10 @@ impl Wire for SearchRequest {
   }
 }
 
-/// Distributed code 4: the depth of our parent in the tree, 0 when it is the branch root. Negative
-/// levels are rejected.
+/// Depth of the parent in the tree.
+///
+/// Distributed code 4. The level is 0 when the parent is the branch root. Negative levels are
+/// rejected.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct BranchLevel {
@@ -119,7 +132,9 @@ impl Wire for BranchLevel {
   }
 }
 
-/// Distributed code 5: the username at the root of our parent's branch.
+/// Username at the root of the parent's branch.
+///
+/// Distributed code 5.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct BranchRoot {
@@ -148,26 +163,35 @@ impl Wire for BranchRoot {
 }
 
 wire_struct! {
-  /// Distributed code 7: how many levels of children the sending child has below it. Obsolete:
-  /// parsed and ignored, the server works depth out itself.
+  /// Number of levels of children below the sending child.
+  ///
+  /// Distributed code 7.
+  ///
+  /// Obsolete: parsed and ignored. The server works out the depth itself.
   pub struct ChildDepth {
     pub depth: u32,
   }
 }
 
-/// Server code 93: a distributed message the server wraps for us once we are a branch root, also
-/// carried by an old parent's `EmbeddedMessage`.
+/// Distributed message wrapped by the server.
+///
+/// Server code 93. Sent by the server once the client is a branch root. Also carried by the
+/// [`EmbeddedMessage`] of an old parent.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Embedded {
-  /// only 3 (`SearchRequest`) is ever embedded by the server
+  /// Code of the inner distributed message.
+  ///
+  /// The server only ever embeds 3 ([`SearchRequest`]).
   pub distributed_code: u8,
   pub payload: Vec<u8>,
 }
 
 impl Embedded {
-  /// the unwrapped distributed frame, which is what gets broadcast to children and what
-  /// [`DistributedMessage::decode`] takes
+  /// Returns the unwrapped distributed frame.
+  ///
+  /// This is the frame that is broadcast to children and that [`DistributedMessage::decode`]
+  /// takes.
   pub fn inner_frame(&self) -> Vec<u8> {
     let mut w = Writer::frame(FrameKind::Distributed, u32::from(self.distributed_code));
     w.bytes(&self.payload);
@@ -192,15 +216,19 @@ impl Wire for Embedded {
   }
 }
 
-/// Distributed code 93: a wrapped distributed message from a parent running an old SoulseekQt.
+/// Wrapped distributed message from an old SoulseekQt parent.
+///
+/// Distributed code 93. Sent by parents running a SoulseekQt version from before early 2026.
+///
 /// Deprecated.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct EmbeddedMessage {
   #[cfg_attr(test, proptest(strategy = "crate::proptests::distributed_embedded()"))]
   pub embedded: Embedded,
-  /// the inner code was preceded by three zero bytes, as when a parent forwards the server's
-  /// wrapper with its 4-byte code
+  /// Whether the inner code was preceded by three zero bytes.
+  ///
+  /// Happens, for example, when a parent forwards the server's wrapper with its 4-byte code.
   pub padded: bool,
 }
 

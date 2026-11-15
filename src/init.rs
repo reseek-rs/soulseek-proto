@@ -1,6 +1,10 @@
+//! Peer connection init messages.
+//!
 //! The first frame on an inbound peer socket, and the raw values a transfer (`F`) socket carries
-//! after it. Any init decode error means the socket should be closed, including an invalid username
-//! or an unknown connection type.
+//! after it.
+//!
+//! Any error decoding an init message, including an invalid username or an unknown connection
+//! type, means the socket should be closed.
 
 use crate::codec::{Wire, family, wire_struct};
 use crate::codes::InitCode;
@@ -11,40 +15,47 @@ use crate::names::is_valid_peer_username;
 use crate::wire::{Reader, Writer};
 
 family! {
-  /// The first frame on an inbound peer socket, which says why the peer connected
+  /// First frame on an inbound peer socket.
+  ///
+  /// States why the peer connected.
   pub enum InitMessage {
     code: InitCode,
     frame: Init,
     label: "init",
     quiet: [],
     messages: {
-      /// sent by a peer connecting because the server relayed our `ConnectToPeer`
       PierceFirewall(PierceFirewall),
-      /// sent by a peer connecting directly
       PeerInit(PeerInit),
     }
   }
 }
 
 wire_struct! {
-  /// Init code 0: the first frame of a connection a peer made because the server relayed our
+  /// First frame of a connection solicited by the client.
+  ///
+  /// Init code 0. Sent by a peer that connects because the server relayed the client's
   /// `ConnectToPeer`.
   pub struct PierceFirewall {
-    /// the token of the `ConnectToPeer` that solicited the connection
+    /// Token of the `ConnectToPeer` that solicited the connection.
     pub token: u32,
   }
 }
 
-/// Init code 1: the first frame of a connection a peer made directly, naming itself and the
-/// connection type.
+/// First frame of a direct connection.
+///
+/// Init code 1. Sent by a peer that connects directly, naming the peer and the connection type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct PeerInit {
-  /// the connecting peer's own username, unauthenticated
+  /// Username of the connecting peer, as the peer states it.
+  ///
+  /// Not authenticated.
   #[cfg_attr(test, proptest(strategy = "crate::proptests::peer_username()"))]
   pub username: String,
   pub connection_type: PeerConnectionType,
-  /// written as 0 and ignored on receipt
+  /// Token, written as 0 and ignored by receivers.
+  ///
+  /// The decoder keeps the value as sent.
   pub token: u32,
 }
 
@@ -74,19 +85,28 @@ impl Wire for PeerInit {
   }
 }
 
-/// The `u32` token the initiator of a transfer connection writes raw after the init frame
+/// Raw token of a transfer connection.
+///
+/// A raw `u32` that the initiator of a transfer connection writes after the init frame.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FileTransferInit {
   pub token: u32,
 }
 
 impl FileTransferInit {
-  /// the four raw bytes, little-endian
+  /// Returns the token as four raw little-endian bytes.
   pub fn encode(&self) -> [u8; 4] {
     self.token.to_le_bytes()
   }
 
-  /// exactly the four raw bytes, nothing more
+  /// Decodes the token from exactly four raw bytes.
+  ///
+  /// Nothing may follow them.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`DecodeError::Field`] with [`FieldError::Truncated`] if `bytes` is shorter than
+  /// four bytes, and [`DecodeError::TrailingBytes`] if it is longer.
   pub fn decode(bytes: &[u8]) -> Result<Self, DecodeError> {
     raw_exact(bytes, "FileTransferInit", "token").map(|bytes| Self {
       token: u32::from_le_bytes(bytes),
@@ -94,21 +114,31 @@ impl FileTransferInit {
   }
 }
 
-/// The `u64` offset the downloader writes raw on a transfer connection. It is for resuming only;
-/// an offset past the file size (Soulseek NS sends `u64::MAX` when resuming past 2 GiB) must be
-/// refused by the uploader.
+/// Raw file offset of a transfer connection.
+///
+/// A raw `u64` that the downloader writes on a transfer connection.
+///
+/// The offset is for resuming only. The uploader must refuse an offset past the file size, such
+/// as the `u64::MAX` that Soulseek NS sends when resuming past 2 GiB.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FileOffset {
   pub offset: u64,
 }
 
 impl FileOffset {
-  /// the eight raw bytes, little-endian
+  /// Returns the offset as eight raw little-endian bytes.
   pub fn encode(&self) -> [u8; 8] {
     self.offset.to_le_bytes()
   }
 
-  /// exactly the eight raw bytes, nothing more
+  /// Decodes the offset from exactly eight raw bytes.
+  ///
+  /// Nothing may follow them.
+  ///
+  /// # Errors
+  ///
+  /// Returns [`DecodeError::Field`] with [`FieldError::Truncated`] if `bytes` is shorter than
+  /// eight bytes, and [`DecodeError::TrailingBytes`] if it is longer.
   pub fn decode(bytes: &[u8]) -> Result<Self, DecodeError> {
     raw_exact(bytes, "FileOffset", "offset").map(|bytes| Self {
       offset: u64::from_le_bytes(bytes),
