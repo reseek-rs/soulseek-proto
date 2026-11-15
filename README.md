@@ -5,7 +5,7 @@ with its encoder and decoder, the frame codec, decode limits and the data model.
 
 It does no I/O and has no async runtime or opinion about what a client does with a message. Bytes
 go in and messages come out, and the other way round. For a client that connects, logs in, searches
-and transfers, see `soulseek-client`. Its first user is [reseek](https://github.com/tetra-fox/reseek).
+and transfers, see [`soulseek-client`](https://github.com/reseek-rs/soulseek-client).
 
 ```rust
 use soulseek_proto::frame::{self, FrameKind};
