@@ -2,6 +2,7 @@
 ///
 /// Remote strings are never carried in this type, so an error can be logged as is.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum DecodeError {
   /// Length prefix smaller than the code width.
   ///
@@ -48,6 +49,7 @@ pub enum DecodeError {
 /// The display text follows the message and field name, as in
 /// "Login greeting: needs 12 bytes, 3 remain".
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum FieldError {
   #[error("needs {needed} bytes, {remaining} remain")]
   Truncated { needed: usize, remaining: usize },

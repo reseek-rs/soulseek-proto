@@ -7,6 +7,7 @@ macro_rules! codes {
   ($(#[$meta:meta])* $name:ident: $repr:ty { $($variant:ident = $value:literal,)* }) => {
     $(#[$meta])*
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[non_exhaustive]
     #[repr($repr)]
     pub enum $name {
       $($variant = $value,)*

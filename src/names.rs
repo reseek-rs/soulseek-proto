@@ -11,6 +11,7 @@ pub const SERVER_USERNAME: &str = "server";
 ///
 /// Mirrors the server's `INVALIDUSERNAME` details.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum LoginUsernameError {
   #[error("username is empty")]
   Empty,
@@ -55,6 +56,7 @@ pub fn validate_login_username(username: &str) -> Result<(), LoginUsernameError>
 ///
 /// Each variant displays as the reason that follows "Invalid room name: ".
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum RoomNameError {
   #[error("it is empty")]
   Empty,

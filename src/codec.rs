@@ -308,6 +308,7 @@ macro_rules! family {
   ) => {
     $(#[$meta])*
     #[derive(Clone, Debug, PartialEq, Eq)]
+    #[non_exhaustive]
     #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
     pub enum $name {
       $( $(#[$variant_meta])* $variant $(($ty))?, )*
