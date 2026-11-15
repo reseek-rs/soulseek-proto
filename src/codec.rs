@@ -310,7 +310,8 @@ macro_rules! family {
 
       /// Encodes the message as a complete frame.
       ///
-      /// The frame includes the length prefix.
+      /// The frame includes the length prefix. The decoder's limits are not applied: a message
+      /// with a string, list or picture over its limit encodes to a frame the decoder rejects.
       ///
       /// # Panics
       ///

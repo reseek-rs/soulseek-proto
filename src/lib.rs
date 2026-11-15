@@ -18,6 +18,8 @@
 //!
 //! `decode` enforces [`Limits::DEFAULT`]. [`PeerMessage::decode_with`],
 //! [`peek_search_response`] and [`peek_folder_contents_token`] take the limits as an argument.
+//! The configurable limits bound only peer messages, so a client with limits of its own decodes
+//! peer frames with [`PeerMessage::decode_with`]; [`PeerMessage::decode`] ignores them.
 //!
 //! # Logging
 //!

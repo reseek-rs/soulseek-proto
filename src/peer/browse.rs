@@ -32,6 +32,10 @@ pub struct File {
   /// Kept as received and written back unchanged.
   pub code: u8,
   pub filename: RemoteFilename,
+  /// Size of the file, in bytes.
+  ///
+  /// A size on the wire whose high 32 bits are all set is read as its low 32 bits, so such a
+  /// value does not decode back to itself.
   #[cfg_attr(test, proptest(strategy = "crate::proptests::file_size()"))]
   pub size: u64,
   /// Extension as computed by the sharer.
