@@ -221,36 +221,30 @@ impl Wire for Embedded {
 /// Distributed code 93. Sent by parents running a SoulseekQt version from before early 2026, or
 /// an old version of another client that copied its behaviour.
 ///
+/// The inner code is read with or without three zero bytes before it, and written with them,
+/// as a parent writes it when it forwards the server's wrapper with its 4-byte code.
+///
 /// Deprecated.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct EmbeddedMessage {
-  #[cfg_attr(test, proptest(strategy = "crate::proptests::distributed_embedded()"))]
   pub embedded: Embedded,
-  /// Whether the inner code was preceded by three zero bytes.
-  ///
-  /// Happens, for example, when a parent forwards the server's wrapper with its 4-byte code.
-  pub padded: bool,
 }
 
 impl Wire for EmbeddedMessage {
   const MIN_BYTES: usize = 1;
 
   fn read(r: &mut Reader, _field: &'static str) -> Result<Self, DecodeError> {
-    let padded = r.remaining() >= 4 && r.peek(3) == [0; 3];
-    if padded {
+    if r.remaining() >= 4 && r.peek(3) == [0; 3] {
       r.bytes(3, "padding")?;
     }
     Ok(Self {
       embedded: Embedded::read(r, "embedded")?,
-      padded,
     })
   }
 
   fn write(&self, w: &mut Writer) {
-    if self.padded {
-      w.bytes(&[0; 3]);
-    }
+    w.bytes(&[0; 3]);
     self.embedded.write(w);
   }
 }
@@ -274,17 +268,11 @@ pub(crate) mod tests {
     branch_root: DistributedMessage::BranchRoot(BranchRoot { username: "root".into() }) => p().s("root").frame_u8(5);
     child_depth: DistributedMessage::ChildDepth(ChildDepth { depth: 2 }) => p().u32(2).frame_u8(7);
     embedded_message:
-      DistributedMessage::EmbeddedMessage(EmbeddedMessage {
-        embedded: Embedded { distributed_code: 3, payload: search() },
-        padded: false,
-      })
-      => p().u8(3).raw(&search()).frame_u8(93);
-    embedded_message_padded:
-      DistributedMessage::EmbeddedMessage(EmbeddedMessage {
-        embedded: Embedded { distributed_code: 3, payload: search() },
-        padded: true,
-      })
+      DistributedMessage::EmbeddedMessage(EmbeddedMessage { embedded: Embedded { distributed_code: 3, payload: search() } })
       => p().raw(&[0, 0, 0]).u8(3).raw(&search()).frame_u8(93);
+    embedded_message_with_inner_code_0:
+      DistributedMessage::EmbeddedMessage(EmbeddedMessage { embedded: Embedded { distributed_code: 0, payload: vec![0, 0, 3] } })
+      => p().raw(&[0, 0, 0]).u8(0).raw(&[0, 0, 3]).frame_u8(93);
   }
 
   decodes! {
@@ -294,11 +282,10 @@ pub(crate) mod tests {
       => Err(field("BranchLevel", "level", FieldError::NegativeBranchLevel { level: -1 }));
     branch_root_rejects_a_non_printable_username: DistributedMessage, p().s("a\u{7}b").frame_u8(5)
       => Err(field("BranchRoot", "username", FieldError::InvalidUsername));
+    embedded_message_without_padding: DistributedMessage, p().u8(3).raw(&search()).frame_u8(93)
+      => Ok(DistributedMessage::EmbeddedMessage(EmbeddedMessage { embedded: Embedded { distributed_code: 3, payload: search() } }));
     embedded_message_with_a_short_zero_prefix_is_not_padded: DistributedMessage, p().raw(&[0, 0, 0]).frame_u8(93)
-      => Ok(DistributedMessage::EmbeddedMessage(EmbeddedMessage {
-        embedded: Embedded { distributed_code: 0, payload: vec![0, 0] },
-        padded: false,
-      }));
+      => Ok(DistributedMessage::EmbeddedMessage(EmbeddedMessage { embedded: Embedded { distributed_code: 0, payload: vec![0, 0] } }));
     unknown_placeholder_code: DistributedMessage, p().frame_u8(6) => Err(DecodeError::UnknownCode { code: 6 });
   }
 

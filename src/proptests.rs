@@ -8,7 +8,7 @@ use proptest::prelude::*;
 use proptest::strategy::BoxedStrategy;
 
 use crate::codes::{DistributedCode, InitCode, PeerCode, ServerCode};
-use crate::distributed::{DistributedMessage, Embedded};
+use crate::distributed::DistributedMessage;
 use crate::error::FieldError;
 use crate::frame::{self, FrameKind};
 use crate::init::InitMessage;
@@ -32,15 +32,6 @@ pub(crate) fn file_size() -> impl Strategy<Value = u64> {
 
 pub(crate) fn peer_username() -> impl Strategy<Value = String> {
   "[a-zA-Z0-9_ .-]{1,30}".prop_filter("reserved name", |name| name != "server")
-}
-
-/// an unpadded embedded message with inner code 0 and two zero payload bytes would read back as
-/// padded, so the inner code is never 0
-pub(crate) fn distributed_embedded() -> impl Strategy<Value = Embedded> {
-  (1..=u8::MAX, vec(any::<u8>(), 0..32)).prop_map(|(distributed_code, payload)| Embedded {
-    distributed_code,
-    payload,
-  })
 }
 
 impl Arbitrary for RemoteFilename {
