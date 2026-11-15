@@ -153,7 +153,8 @@ wire_struct! {
   /// Server code 111. Sent by the server, with those recommended against.
   pub struct GetInterestRecommendationsResponse {
     pub interest: String,
-    pub recommendations: Recommendations,
+    /// One list for both kinds. An interest recommended against has a negative count.
+    pub recommendations: Vec<Recommendation>,
   }
 }
 
@@ -239,12 +240,12 @@ pub(crate) mod tests {
     get_interest_recommendations_response:
       R::GetInterestRecommendations(GetInterestRecommendationsResponse {
         interest: "jazz".into(),
-        recommendations: Recommendations {
-          recommendations: vec![Recommendation { interest: "bebop".into(), count: 2 }],
-          unrecommendations: vec![Recommendation { interest: "metal".into(), count: -1 }],
-        },
+        recommendations: vec![
+          Recommendation { interest: "bebop".into(), count: 2 },
+          Recommendation { interest: "metal".into(), count: -1 },
+        ],
       })
-      => p().s("jazz").u32(1).s("bebop").i32(2).u32(1).s("metal").i32(-1).frame(111);
+      => p().s("jazz").u32(2).s("bebop").i32(2).s("metal").i32(-1).frame(111);
     get_interest_similar_users_request:
       Q::GetInterestSimilarUsers(GetInterestSimilarUsersRequest { interest: "jazz".into() }) => p().s("jazz").frame(112);
     get_interest_similar_users_response:
