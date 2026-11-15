@@ -8,9 +8,12 @@ pub enum DecodeError {
   /// The stream cannot be resynchronized, and the connection should be closed.
   #[error("frame length {len} is below the code width {code_width}")]
   FrameTooShort { len: u32, code_width: usize },
-  /// Length prefix over the limit for the connection kind.
+  /// Length prefix over the limit for the connection kind, or for the code of a peer message.
   ///
-  /// The connection should be closed.
+  /// Over the limit for the connection kind, the connection should be closed. A peer message
+  /// decoder also returns this for a frame longer than
+  /// [`Limits::peer_message_bytes`](crate::Limits::peer_message_bytes) allows its code; that
+  /// message is dropped.
   #[error("frame length {len} exceeds the limit of {limit} bytes")]
   FrameTooLarge { len: u32, limit: u32 },
   /// Input that ends before the frame does.

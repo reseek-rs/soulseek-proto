@@ -3,6 +3,7 @@
 //! A frame is `[u32 len][code][payload]`. The code is 4 bytes on server and peer connections and
 //! 1 byte on distributed connections and in the init frame.
 
+use crate::codes::PeerCode;
 use crate::error::DecodeError;
 use crate::limits::Limits;
 
@@ -119,12 +120,19 @@ pub fn split<'a>(
   )))
 }
 
-/// the single frame that must make up all of `buf`, for the message decoders
+/// the single frame that must make up all of `buf`, for the message decoders. `header` holds a
+/// peer frame to the longest any peer message may be, and this holds it to the limit of its code
 pub(crate) fn exact<'a>(
   kind: FrameKind,
   buf: &'a [u8],
   limits: &Limits,
 ) -> Result<Frame<'a>, DecodeError> {
+  if let (FrameKind::Peer, Some(FrameHeader { len, code })) = (kind, header(kind, buf, limits)?) {
+    let limit = PeerCode::from_code(code).map(|code| limits.peer_message_bytes(code));
+    if let Some(limit) = limit.filter(|&limit| len > limit) {
+      return Err(DecodeError::FrameTooLarge { len, limit });
+    }
+  }
   let error = match split(kind, buf, limits)? {
     Some((frame, consumed)) if consumed == buf.len() => return Ok(frame),
     Some((_, consumed)) => DecodeError::TrailingBytes {
@@ -219,6 +227,41 @@ mod tests {
         len: 0,
         code_width: 1
       })
+    );
+  }
+
+  #[test]
+  fn a_peer_frame_longer_than_its_code_allows_is_rejected() {
+    use crate::limits::LIMIT_PEER_SMALL_MESSAGE_BYTES;
+
+    // a queue download, code 43, with a one-byte filename and padding up to the length
+    let frame = |len: u32| {
+      let mut buf = len.to_le_bytes().to_vec();
+      buf.extend([43, 0, 0, 0, 1, 0, 0, 0, b'a']);
+      buf.resize(4 + len as usize, 0);
+      buf
+    };
+    assert!(
+      exact(
+        FrameKind::Peer,
+        &frame(LIMIT_PEER_SMALL_MESSAGE_BYTES),
+        &LIMITS
+      )
+      .is_ok()
+    );
+    let len = LIMIT_PEER_SMALL_MESSAGE_BYTES + 1;
+    assert_eq!(
+      exact(FrameKind::Peer, &frame(len), &LIMITS),
+      Err(DecodeError::FrameTooLarge {
+        len,
+        limit: LIMIT_PEER_SMALL_MESSAGE_BYTES
+      })
+    );
+    // the header alone still lets it through, so a reader can skip the frame
+    assert!(
+      header(FrameKind::Peer, &frame(len), &LIMITS)
+        .unwrap()
+        .is_some()
     );
   }
 

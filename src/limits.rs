@@ -92,7 +92,9 @@ impl Limits {
 
   /// Returns the largest accepted frame `len` for `kind`, in bytes.
   pub fn frame_bytes(&self, kind: FrameKind) -> u32 {
-    match kind {
+    // a frame is its 4-byte prefix and `len` bytes in one slice, which holds at most isize::MAX
+    let addressable = u32::try_from(isize::MAX as usize - 4).unwrap_or(u32::MAX);
+    let limit = match kind {
       FrameKind::Server => LIMIT_SERVER_MESSAGE_BYTES,
       // the longest any peer message may be; one longer than its own code allows is skipped
       FrameKind::Peer => [
@@ -106,7 +108,8 @@ impl Limits {
       .fold(LIMIT_PEER_SMALL_MESSAGE_BYTES, u32::max),
       FrameKind::Distributed => LIMIT_DISTRIBUTED_MESSAGE_BYTES,
       FrameKind::Init => LIMIT_INIT_MESSAGE_BYTES,
-    }
+    };
+    limit.min(addressable)
   }
 
   /// Returns the largest decompressed size for `code`, in bytes.
@@ -125,7 +128,8 @@ impl Limits {
   ///
   /// The bound is the browse limit for a browse response, room for the inflate limit for the
   /// other compressed responses, room for the longest description and picture for the user info,
-  /// and the small-message limit for every other message.
+  /// and the small-message limit for every other message. The peer message decoders reject a
+  /// longer frame.
   pub fn peer_message_bytes(&self, code: PeerCode) -> u32 {
     let payload = match code {
       PeerCode::BrowseResponse => return self.browse_message_bytes,
@@ -141,14 +145,17 @@ impl Limits {
       _ => return LIMIT_PEER_SMALL_MESSAGE_BYTES,
     };
     // a frame length has 32 bits, so a bound past them lets every length through
-    u32::try_from(FrameKind::Peer.code_width() as u64 + payload).unwrap_or(u32::MAX)
+    u32::try_from(payload.saturating_add(FrameKind::Peer.code_width() as u64)).unwrap_or(u32::MAX)
   }
 }
 
-/// the most a zlib stream of `inflated` bytes takes, by zlib's `compressBound`
+/// the most a zlib stream of `inflated` bytes takes, by zlib's `compressBound`; saturates, since
+/// a limit near `usize::MAX` means no limit
 fn zlib_bound(inflated: usize) -> u64 {
   let n = inflated as u64;
-  n + (n >> 12) + (n >> 14) + (n >> 25) + 13
+  [n >> 12, n >> 14, n >> 25, 13]
+    .into_iter()
+    .fold(n, u64::saturating_add)
 }
 
 impl Default for Limits {
@@ -189,6 +196,19 @@ mod tests {
     assert!(compressed.len() > body.len());
     let len = 4 + compressed.len() as u32;
     assert!(len <= limits.peer_message_bytes(PeerCode::SearchResponse));
+  }
+
+  #[test]
+  fn an_inflate_limit_of_usize_max_lets_every_frame_length_through() {
+    let limits = Limits {
+      inflated_search_bytes: usize::MAX,
+      ..Limits::DEFAULT
+    };
+    assert_eq!(
+      limits.peer_message_bytes(PeerCode::SearchResponse),
+      u32::MAX
+    );
+    assert_eq!(limits.frame_bytes(FrameKind::Peer), u32::MAX);
   }
 
   #[test]

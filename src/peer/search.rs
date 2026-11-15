@@ -225,8 +225,9 @@ pub(crate) mod tests {
         FieldError::LimitExceeded { value: 3, limit: 2 }
       ))
     );
+    // under the body's 191 bytes, and enough for the frame bound to let the 78-byte frame in
     let inflated = Limits {
-      inflated_search_bytes: 16,
+      inflated_search_bytes: 100,
       ..Limits::DEFAULT
     };
     assert_eq!(
@@ -234,7 +235,7 @@ pub(crate) mod tests {
       Err(field(
         "SearchResponse",
         "body",
-        FieldError::InflatedTooLarge { limit: 16 }
+        FieldError::InflatedTooLarge { limit: 100 }
       ))
     );
     assert_eq!(
