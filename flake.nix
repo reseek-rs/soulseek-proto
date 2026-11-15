@@ -39,6 +39,12 @@
           nightly = pkgs.rust-bin.selectLatestNightlyWith (
             toolchain: toolchain.minimal.override { extensions = [ "rust-src" ]; }
           );
+          # the oldest Rust the manifest's rust-version promises, which rust-overlay names in full
+          rustVersion = (lib.importTOML ./Cargo.toml).package.rust-version;
+          msrv =
+            pkgs.rust-bin.stable.${
+              if lib.length (lib.splitString "." rustVersion) == 2 then "${rustVersion}.0" else rustVersion
+            }.minimal;
         in
         {
           default = pkgs.mkShell {
@@ -51,6 +57,8 @@
 
             env.RUST_BACKTRACE = "1";
           };
+
+          msrv = pkgs.mkShell { packages = [ msrv ]; };
 
           fuzz = pkgs.mkShell {
             packages = [

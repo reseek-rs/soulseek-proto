@@ -12,8 +12,12 @@ lint:
     cargo fmt --manifest-path fuzz/Cargo.toml --all --check
     cargo clippy --all-features --all-targets -- -D warnings
 
+# the library alone on the manifest's rust-version; its tests need a newer Rust
+msrv:
+    CARGO_TARGET_DIR=target/msrv nix develop .#msrv -c cargo build --locked
+
 # the gate for every push; ci.yml runs it
-ci: lint test
+ci: lint test msrv
 
 # package and build the crate as crates.io would, without uploading; release.yml runs it
 publish-check:
