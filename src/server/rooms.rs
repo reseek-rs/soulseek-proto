@@ -62,7 +62,6 @@ impl Wire for RoomData {
   fn read(r: &mut Reader, _field: &'static str) -> Result<Self, DecodeError> {
     let name = r.string("name")?;
     let users = read_user_lists(r)?;
-    // only private rooms carry the owner and operators
     let private = r.optional("private")?;
     Ok(Self {
       name,

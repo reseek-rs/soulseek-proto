@@ -28,7 +28,6 @@ impl Wire for UserStats {
   fn read(r: &mut Reader, _field: &'static str) -> Result<Self, DecodeError> {
     let average_speed = r.u32("average_speed")?;
     let upload_count = r.u32("upload_count")?;
-    // always 0 on the live server
     r.u32("unknown")?;
     Ok(Self {
       average_speed,
@@ -73,7 +72,6 @@ wire_struct! {
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct GetPeerAddressResponse {
   pub username: String,
-  /// `0.0.0.0` when the user is offline
   pub ip: Ipv4Addr,
   pub port: u32,
   /// absent from older servers

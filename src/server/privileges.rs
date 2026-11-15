@@ -10,8 +10,7 @@ wire_struct! {
 }
 
 wire_struct! {
-  /// Server code 91: a user became privileged. Obsolete: the live server no longer sends it; the
-  /// parser is kept.
+  /// Server code 91: a user became privileged. Obsolete: the live server no longer sends it.
   pub struct AddPrivilegedUser {
     pub username: String,
   }

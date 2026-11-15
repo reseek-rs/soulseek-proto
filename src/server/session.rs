@@ -16,7 +16,6 @@ pub const PROTOCOL_MAJOR_VERSION: u32 = 177;
 /// The minor version sent in `Login`; the server only requires it to be non-zero
 pub const PROTOCOL_MINOR_VERSION: u32 = 760;
 
-/// Lowercase hex md5 of the utf-8 bytes of `username + password`, the `Login` hash field
 pub(crate) fn login_hash(username: &str, password: &str) -> String {
   let mut md5 = Md5::new();
   md5.update(username.as_bytes());
@@ -69,7 +68,7 @@ pub enum LoginResponse {
   },
   /// the login was rejected
   Failure {
-    /// `INVALIDUSERNAME`, `INVALIDPASS`, `SVRFULL`, ... shown verbatim
+    /// `INVALIDUSERNAME`, `INVALIDPASS`, `SVRFULL`, ...
     reason: String,
     detail: Option<String>,
   },
@@ -78,7 +77,6 @@ pub enum LoginResponse {
 impl Wire for LoginResponse {
   const MIN_BYTES: usize = 5;
 
-  /// `success` and `is_supporter` are true only for exactly 1
   fn read(r: &mut Reader, _field: &'static str) -> Result<Self, DecodeError> {
     Ok(if r.bool_exact("success")? {
       Self::Success {

@@ -32,7 +32,6 @@ pub struct ConnectToPeerResponse {
   /// send back in `PierceFirewall`
   pub token: u32,
   pub privileged: bool,
-  /// never dialed
   pub obfuscation: Option<Obfuscation>,
 }
 

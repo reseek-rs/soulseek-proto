@@ -1,7 +1,7 @@
 //! The server connection: [`ServerRequest`] is what the client sends, [`ServerResponse`] what the
 //! server sends, pushed or in reply. A code whose layout differs between the two directions has a
 //! `...Request` and a `...Response` struct; a code with one layout both ways has one struct used by
-//! both enums. Each message lives in the file of its topic; this file holds only the catalog.
+//! both enums.
 
 pub(crate) mod distributed;
 pub(crate) mod interests;
@@ -130,7 +130,6 @@ family! {
       NewPassword(NewPassword),
       PrivateRoomAddOperator(PrivateRoomAddOperator),
       PrivateRoomRemoveOperator(PrivateRoomRemoveOperator),
-      /// codec only
       MessageUsers(MessageUsers),
       /// starts the public chat feed
       AskPublicChat,
@@ -169,7 +168,7 @@ family! {
       PrivateMessage(PrivateMessageResponse),
       /// a search for us to answer
       FileSearch(FileSearchResponse),
-      /// the live server never sends this; an unsolicited one is dropped
+      /// the live server never sends this
       Ping,
       /// obsolete
       SendConnectToken(SendConnectToken),
@@ -212,7 +211,7 @@ family! {
       MinimumParentsInCache(MinimumParentsInCache),
       /// obsolete
       DistributedAliveInterval(DistributedAliveInterval),
-      /// obsolete, the parser is kept
+      /// obsolete
       AddPrivilegedUser(AddPrivilegedUser),
       CheckPrivileges(CheckPrivilegesResponse),
       /// a distributed message the server wraps for a branch root

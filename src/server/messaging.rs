@@ -31,7 +31,6 @@ pub struct PrivateMessageResponse {
 impl Wire for PrivateMessageResponse {
   const MIN_BYTES: usize = 17;
 
-  /// `is_new` is true only for exactly 1
   fn read(r: &mut Reader, _field: &'static str) -> Result<Self, DecodeError> {
     Ok(Self {
       id: r.u32("id")?,
