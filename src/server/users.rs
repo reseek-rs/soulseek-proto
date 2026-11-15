@@ -13,8 +13,7 @@ use crate::wire::{Reader, Writer};
 
 /// User statistics tuple.
 ///
-/// Carried by [`WatchUserResponse`], [`UserStatistics`] and the room messages. On the wire
-/// `upload_count` is followed by a `u32` of unknown meaning; it is written as 0 and not kept.
+/// Carried by [`WatchUserResponse`], [`UserStatistics`] and the room messages.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserStats {
@@ -24,6 +23,8 @@ pub struct UserStats {
   ///
   /// A rolling 32-bit counter.
   pub upload_count: u32,
+  /// A `u32` of unknown meaning that follows `upload_count`, kept as received.
+  pub unknown: u32,
   pub file_count: u32,
   pub directory_count: u32,
 }
@@ -32,12 +33,10 @@ impl Wire for UserStats {
   const MIN_BYTES: usize = 20;
 
   fn read(r: &mut Reader, _field: &'static str) -> Result<Self, DecodeError> {
-    let average_speed = r.u32("average_speed")?;
-    let upload_count = r.u32("upload_count")?;
-    r.u32("unknown")?;
     Ok(Self {
-      average_speed,
-      upload_count,
+      average_speed: r.u32("average_speed")?,
+      upload_count: r.u32("upload_count")?,
+      unknown: r.u32("unknown")?,
       file_count: r.u32("file_count")?,
       directory_count: r.u32("directory_count")?,
     })
@@ -46,7 +45,7 @@ impl Wire for UserStats {
   fn write(&self, w: &mut Writer) {
     w.u32(self.average_speed);
     w.u32(self.upload_count);
-    w.u32(0);
+    w.u32(self.unknown);
     w.u32(self.file_count);
     w.u32(self.directory_count);
   }
@@ -269,20 +268,20 @@ wire_struct! {
 #[cfg(test)]
 pub(crate) mod tests {
   use super::*;
-  use crate::error::FieldError;
   use crate::server::{ServerRequest as Q, ServerResponse as R};
-  use crate::testing::{IP, P, decodes, field, ip, p, vectors};
+  use crate::testing::{IP, P, decodes, ip, p, vectors};
 
   pub(crate) fn stats() -> UserStats {
     UserStats {
       average_speed: 51_200,
       upload_count: 12,
+      unknown: 0,
       file_count: 3_400,
       directory_count: 210,
     }
   }
 
-  /// the stats tuple with its always-zero third field
+  /// the bytes of `stats()`
   pub(crate) fn stats_bytes(b: P) -> P {
     b.u32(51_200).u32(12).u32(0).u32(3_400).u32(210)
   }
@@ -352,7 +351,7 @@ pub(crate) mod tests {
       => Ok(R::GetPeerAddress(GetPeerAddressResponse { username: "bob".into(), ip: ip(), port: 1, obfuscation: None }));
     get_status_response_bool_accepts_any_non_zero: R, p().s("bob").u32(2).u8(7).frame(7)
       => Ok(R::GetStatus(UserStatus { username: "bob".into(), presence: UserPresence::Online, is_privileged: true }));
-    get_status_response_rejects_unknown_presence: R, p().s("bob").u32(3).u8(0).frame(7)
-      => Err(field("GetStatus", "presence", FieldError::InvalidValue { value: 3 }));
+    get_status_response_keeps_an_unknown_presence: R, p().s("bob").u32(3).u8(0).frame(7)
+      => Ok(R::GetStatus(UserStatus { username: "bob".into(), presence: UserPresence::Unknown(3), is_privileged: false }));
   }
 }

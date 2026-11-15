@@ -190,11 +190,11 @@ impl Wire for UserPresence {
   const MIN_BYTES: usize = 4;
 
   fn read(r: &mut Reader, field: &'static str) -> Result<Self, DecodeError> {
-    Self::from_u32(r.u32(field)?).map_err(|error| r.fail(field, error))
+    r.u32(field).map(Self::from_u32)
   }
 
   fn write(&self, w: &mut Writer) {
-    w.u32(*self as u32);
+    w.u32(self.to_u32());
   }
 }
 

@@ -13,20 +13,31 @@ use crate::error::FieldError;
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum UserPresence {
   /// Not logged in.
-  Offline = 0,
+  Offline,
   /// Logged in and marked away.
-  Away = 1,
+  Away,
   /// Logged in and not away.
-  Online = 2,
+  Online,
+  /// Any other value, kept so that the message it arrives in still decodes.
+  Unknown(#[cfg_attr(test, proptest(strategy = "3..=u32::MAX"))] u32),
 }
 
 impl UserPresence {
-  pub(crate) fn from_u32(value: u32) -> Result<Self, FieldError> {
+  pub(crate) fn from_u32(value: u32) -> Self {
     match value {
-      0 => Ok(Self::Offline),
-      1 => Ok(Self::Away),
-      2 => Ok(Self::Online),
-      _ => Err(FieldError::InvalidValue { value }),
+      0 => Self::Offline,
+      1 => Self::Away,
+      2 => Self::Online,
+      other => Self::Unknown(other),
+    }
+  }
+
+  pub(crate) fn to_u32(self) -> u32 {
+    match self {
+      Self::Offline => 0,
+      Self::Away => 1,
+      Self::Online => 2,
+      Self::Unknown(other) => other,
     }
   }
 }
