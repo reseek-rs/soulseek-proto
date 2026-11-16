@@ -180,10 +180,29 @@ fn write_compressed(w: &mut Writer, write: impl FnOnce(&mut Writer)) {
   w.bytes(&compress(&body.into_body()));
 }
 
+/// Reads a count a peer reports of its own upload queue.
+///
+/// The count is a queue length, as in [`SearchResponse::queue_length`] and
+/// [`UserInfo::queue_length`], or a place in the queue, as in [`PlaceInQueueResponse::place`].
+/// Returns `None` when the peer does not know it: some clients send -1, which reads unsigned as
+/// a value above [`i32::MAX`].
+pub fn queue_count(value: u32) -> Option<u32> {
+  i32::try_from(value).is_ok().then_some(value)
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
   use super::*;
   use crate::testing::p;
+
+  #[test]
+  fn a_queue_count_above_the_signed_range_is_unknown() {
+    assert_eq!(queue_count(0), Some(0));
+    assert_eq!(queue_count(i32::MAX as u32), Some(i32::MAX as u32));
+    assert_eq!(queue_count(i32::MAX as u32 + 1), None);
+    // -1 as some clients send it
+    assert_eq!(queue_count(u32::MAX), None);
+  }
 
   #[test]
   fn codes_without_a_layout_decode_as_unknown() {
