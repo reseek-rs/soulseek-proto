@@ -1,20 +1,24 @@
 default:
     @just --list
 
-# cargo nextest, then the doc examples nextest does not run
+# cargo nextest without and with the features, then the doc examples nextest does not run
 test:
+    cargo nextest run
     cargo nextest run --all-features
     cargo test --all-features --doc
 
-# formatting of the crate and the fuzz crate, and clippy
+# formatting of the crate and the fuzz crate, and clippy without and with the features
 lint:
     cargo fmt --all --check
     cargo fmt --manifest-path fuzz/Cargo.toml --all --check
+    cargo clippy --all-targets -- -D warnings
     cargo clippy --all-features --all-targets -- -D warnings
 
-# the library alone on the manifest's rust-version; its tests need a newer Rust
+# the library alone on the manifest's rust-version, without and with the features; its tests
+# need a newer Rust
 msrv:
     CARGO_TARGET_DIR=target/msrv nix develop .#msrv -c cargo build --locked
+    CARGO_TARGET_DIR=target/msrv nix develop .#msrv -c cargo build --locked --all-features
 
 # the gate for every push; ci.yml runs it
 ci: lint test msrv
