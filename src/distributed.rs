@@ -45,6 +45,7 @@ family! {
 ///
 /// Deprecated: defined as empty, though some clients reply with a `u32` token.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Ping {
   pub token: Option<u32>,
@@ -71,6 +72,7 @@ impl Wire for Ping {
 /// Distributed code 3. The receiving child forwards it to its own children and answers it.
 /// Written with the identifier 49 ([`SEARCH_IDENTIFIER`]). Any other identifier is rejected.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct SearchRequest {
   pub username: String,
@@ -111,6 +113,7 @@ impl Wire for SearchRequest {
 /// Distributed code 4. The level is 0 when the parent is the branch root. Negative levels are
 /// rejected.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct BranchLevel {
   #[cfg_attr(test, proptest(strategy = "0..=i32::MAX as u32"))]
@@ -136,6 +139,7 @@ impl Wire for BranchLevel {
 ///
 /// Distributed code 5.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct BranchRoot {
   #[cfg_attr(test, proptest(strategy = "crate::proptests::peer_username()"))]
@@ -178,6 +182,7 @@ wire_struct! {
 /// Server code 93. Sent by the server once the client is a branch root. Also carried by the
 /// [`EmbeddedMessage`] of an old parent.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Embedded {
   /// Code of the inner distributed message.
@@ -226,6 +231,7 @@ impl Wire for Embedded {
 ///
 /// Deprecated.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct EmbeddedMessage {
   pub embedded: Embedded,

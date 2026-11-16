@@ -28,6 +28,7 @@ wire_struct! {
 /// address of the peer and the token to send back in
 /// [`PierceFirewall`](crate::init::PierceFirewall).
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct ConnectToPeerResponse {
   pub username: String,
@@ -102,6 +103,7 @@ wire_struct! {
 /// Server code 1001. Sent by the server when the peer the client asked, through the server, to
 /// connect to it could not reach the client.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct CannotConnectResponse {
   pub token: u32,

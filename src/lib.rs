@@ -27,6 +27,13 @@
 //! level except distributed pings, distributed searches and embedded messages, which are too
 //! frequent to log. A partial frame or bytes past one frame are logged at the `warn` level. A
 //! frame length out of range is returned without being logged, and is left to the caller to log.
+//!
+//! # Features
+//!
+//! `serde`, off by default, implements `Serialize` and `Deserialize` for the message structs and
+//! the data model: files, directories, users, rooms, [`RemoteFilename`], [`SearchQuery`] and
+//! [`Limits`]. The message family enums, the frame types, the errors, [`Secret`] and the
+//! messages that hold one have no implementations.
 
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]

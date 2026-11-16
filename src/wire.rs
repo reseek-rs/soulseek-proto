@@ -96,9 +96,76 @@ impl fmt::Display for RemoteFilename {
   }
 }
 
+/// Serializes UTF-8 bytes as a string, and any other bytes as a map with the one key `bytes`
+/// holding them as a list of numbers.
+#[cfg(feature = "serde")]
+impl serde::Serialize for RemoteFilename {
+  fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    use serde::ser::SerializeStruct;
+
+    match &self.0 {
+      Repr::Utf8(text) => serializer.serialize_str(text),
+      Repr::Latin1 { bytes, .. } => {
+        let mut name = serializer.serialize_struct("RemoteFilename", 1)?;
+        name.serialize_field("bytes", bytes)?;
+        name.end()
+      }
+    }
+  }
+}
+
+/// Deserializes either form [`Serialize`](serde::Serialize) writes, from a self-describing
+/// format. The bytes of the map form are decoded for display as [`from_bytes`](Self::from_bytes)
+/// decodes them.
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for RemoteFilename {
+  fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+    use serde::de::Error;
+
+    struct Visitor;
+
+    impl<'de> serde::de::Visitor<'de> for Visitor {
+      type Value = RemoteFilename;
+
+      fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("a string, or a map with the key `bytes`")
+      }
+
+      fn visit_str<E: Error>(self, text: &str) -> Result<Self::Value, E> {
+        Ok(RemoteFilename::from(text))
+      }
+
+      fn visit_string<E: Error>(self, text: String) -> Result<Self::Value, E> {
+        Ok(RemoteFilename::from(text))
+      }
+
+      fn visit_map<A: serde::de::MapAccess<'de>>(
+        self,
+        mut map: A,
+      ) -> Result<Self::Value, A::Error> {
+        let mut bytes = None;
+        while let Some(key) = map.next_key::<String>()? {
+          if key != "bytes" {
+            return Err(Error::unknown_field(&key, &["bytes"]));
+          }
+          if bytes.is_some() {
+            return Err(Error::duplicate_field("bytes"));
+          }
+          bytes = Some(map.next_value::<Vec<u8>>()?);
+        }
+        bytes
+          .map(RemoteFilename::from_bytes)
+          .ok_or_else(|| Error::missing_field("bytes"))
+      }
+    }
+
+    deserializer.deserialize_any(Visitor)
+  }
+}
+
 /// Password or password hash carried by a message.
 ///
-/// The `Debug` implementation never prints it.
+/// The `Debug` implementation never prints it, and it has no serde implementations.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Secret(String);
 
@@ -558,5 +625,50 @@ mod tests {
         ..
       })
     ));
+  }
+
+  #[cfg(feature = "serde")]
+  #[test]
+  fn remote_filename_that_is_not_utf8_serializes_as_its_bytes() {
+    let name = RemoteFilename::from_bytes(b"caf\xe9\\01.mp3".to_vec());
+    let json = serde_json::to_string(&name).unwrap();
+    assert_eq!(json, r#"{"bytes":[99,97,102,233,92,48,49,46,109,112,51]}"#);
+    let back: RemoteFilename = serde_json::from_str(&json).unwrap();
+    assert_eq!(back, name);
+    assert_eq!(back.as_bytes(), b"caf\xe9\\01.mp3");
+    assert_eq!(back.as_str(), "caf\u{e9}\\01.mp3");
+    assert!(back.is_lossy());
+  }
+
+  #[cfg(feature = "serde")]
+  #[test]
+  fn remote_filename_that_is_utf8_serializes_as_a_string() {
+    let name = RemoteFilename::from("caf\u{e9}\\01.mp3");
+    let json = serde_json::to_string(&name).unwrap();
+    assert_eq!(json, "\"caf\u{e9}\\\\01.mp3\"");
+    let back: RemoteFilename = serde_json::from_str(&json).unwrap();
+    assert_eq!(back, name);
+    assert!(!back.is_lossy());
+    // utf-8 bytes in the map form are the same name
+    let bytes: RemoteFilename = serde_json::from_str(r#"{"bytes":[97,46,109,112,51]}"#).unwrap();
+    assert_eq!(bytes, RemoteFilename::from("a.mp3"));
+  }
+
+  #[cfg(feature = "serde")]
+  #[test]
+  fn remote_filename_rejects_other_shapes() {
+    for json in [
+      "{}",
+      r#"{"text":"a"}"#,
+      r#"{"bytes":[1],"bytes":[2]}"#,
+      r#"{"bytes":[256]}"#,
+      "[97]",
+      "7",
+    ] {
+      assert!(
+        serde_json::from_str::<RemoteFilename>(json).is_err(),
+        "{json}"
+      );
+    }
   }
 }

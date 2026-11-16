@@ -236,9 +236,11 @@ impl Wire for PeerConnectionType {
 }
 
 /// A struct whose layout is its fields in declaration order, each read and written with its own
-/// `Wire` impl. Messages with optional or conditional fields implement `Wire` by hand.
+/// `Wire` impl. Messages with optional or conditional fields implement `Wire` by hand. The struct
+/// gets the serde derives unless it is marked `@no_serde`, which a struct holding a `Secret` is.
 macro_rules! wire_struct {
   (
+    @no_serde
     $(#[$meta:meta])*
     pub struct $name:ident {
       $( $(#[$field_meta:meta])* pub $field:ident: $ty:ty, )*
@@ -268,6 +270,14 @@ macro_rules! wire_struct {
       fn log<'a>(&'a self, _name: &'static str, fields: &mut $crate::log::KeyFields<'a>) {
         $( $crate::codec::Wire::log(&self.$field, stringify!($field), fields); )*
       }
+    }
+  };
+  ( $(#[$meta:meta])* pub struct $($rest:tt)* ) => {
+    $crate::codec::wire_struct! {
+      @no_serde
+      $(#[$meta])*
+      #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+      pub struct $($rest)*
     }
   };
 }

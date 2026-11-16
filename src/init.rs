@@ -45,6 +45,7 @@ wire_struct! {
 ///
 /// Init code 1. Sent by a peer that connects directly, naming the peer and the connection type.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct PeerInit {
   /// Username of the connecting peer, as the peer states it.
@@ -89,6 +90,7 @@ impl Wire for PeerInit {
 ///
 /// A raw `u32` that the initiator of a transfer connection writes after the init frame.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FileTransferInit {
   pub token: u32,
 }
@@ -121,6 +123,7 @@ impl FileTransferInit {
 /// The offset is for resuming only. The uploader must refuse an offset past the file size, such
 /// as the `u64::MAX` that Soulseek NS sends when resuming past 2 GiB.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FileOffset {
   pub offset: u64,
 }

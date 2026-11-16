@@ -22,6 +22,7 @@ wire_struct! {
 /// Server codes 54 and 56. Sent by the server with interests recommended for the client or across
 /// the network. The second block is optional on read and always written.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Recommendations {
   pub recommendations: Vec<Recommendation>,

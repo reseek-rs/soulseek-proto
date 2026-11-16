@@ -12,6 +12,7 @@ use crate::wire::{Reader, RemoteFilename, Writer};
 /// Peer code 40. Either a request to download a file, or an announcement by the uploader that it
 /// is about to send one.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum TransferRequest {
   /// The sender wants to receive the file.
@@ -96,6 +97,7 @@ impl Wire for TransferRequest {
 ///
 /// Peer code 41. Allows the transfer or refuses it with a message.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum TransferResponse {
   /// The transfer may start.

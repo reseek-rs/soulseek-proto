@@ -10,6 +10,7 @@ use crate::error::FieldError;
 ///
 /// Reported by `GetStatus` and the room messages.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum UserPresence {
   /// Not logged in.
@@ -47,6 +48,7 @@ impl UserPresence {
 /// The type of room that a [`JoinRoomRequest`](crate::server::JoinRoomRequest) creates when the
 /// room does not exist yet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum RoomType {
   /// Anyone can join.
@@ -70,6 +72,7 @@ impl RoomType {
 /// A one-character connection type, carried by [`PeerInit`](crate::init::PeerInit) and
 /// `ConnectToPeer`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum PeerConnectionType {
   /// `"P"`: peer messages.
@@ -104,6 +107,7 @@ impl PeerConnectionType {
 /// The value `3` (encoder) is obsolete and decodes as [`Unknown(3)`](Self::Unknown), as do values
 /// from third-party clients, so that an attribute list re-encodes unchanged.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum FileAttributeType {
   /// Bit rate, in kilobits per second.
   BitRate,
@@ -145,6 +149,7 @@ impl FileAttributeType {
 
 /// Free-text search query split into terms and exclusions.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SearchQuery {
   /// Terms in order, including a lone `-`.
   pub terms: Vec<String>,
@@ -213,5 +218,26 @@ mod tests {
   #[test]
   fn search_query_dashes_only_is_an_empty_exclusion() {
     assert_eq!(SearchQuery::parse("--").exclusions, [""]);
+  }
+
+  #[cfg(feature = "serde")]
+  #[test]
+  fn enums_serialize_under_their_variant_names() {
+    use serde_json::{from_value, json, to_value};
+
+    assert_eq!(to_value(UserPresence::Away).unwrap(), json!("Away"));
+    let unknown = json!({ "Unknown": 7 });
+    assert_eq!(to_value(UserPresence::Unknown(7)).unwrap(), unknown);
+    assert_eq!(
+      from_value::<UserPresence>(unknown).unwrap(),
+      UserPresence::Unknown(7)
+    );
+    let transfer = json!("Transfer");
+    assert_eq!(to_value(PeerConnectionType::Transfer).unwrap(), transfer);
+    assert_eq!(
+      from_value::<PeerConnectionType>(transfer).unwrap(),
+      PeerConnectionType::Transfer
+    );
+    assert!(from_value::<PeerConnectionType>(json!("F")).is_err());
   }
 }

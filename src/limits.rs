@@ -71,6 +71,7 @@ pub const LIMIT_ATTRIBUTES_PER_FILE: usize = 64;
 ///
 /// Every other limit is a constant.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Limits {
   /// Maximum frame `len` of a browse response, in bytes.
   pub browse_message_bytes: u32,

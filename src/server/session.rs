@@ -30,6 +30,7 @@ pub(crate) fn login_hash(username: &str, password: &str) -> String {
 }
 
 wire_struct! {
+  @no_serde
   /// Login request.
   ///
   /// Server code 1. Sent by the client as the first message on the server connection, with the
@@ -132,6 +133,7 @@ impl Wire for LoginResponse {
 ///
 /// Server code 2. Sent by the client with the login and whenever the port changes.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct SetListenPort {
   pub port: u32,
@@ -199,6 +201,7 @@ wire_struct! {
 }
 
 wire_struct! {
+  @no_serde
   /// New password for the client's account.
   ///
   /// Server code 142. Sent by the client. The server echoes the message back once the password is

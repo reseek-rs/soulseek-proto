@@ -27,6 +27,7 @@ wire_struct! {
 ///
 /// Peer code 9. Holds the files that match one of the client's searches. Compressed with zlib.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct SearchResponse {
   /// Username of the responding peer.
@@ -242,6 +243,49 @@ pub(crate) mod tests {
     assert_eq!(
       PeerMessage::decode_with(&frame, &Limits::DEFAULT),
       Ok(response)
+    );
+  }
+
+  #[cfg(feature = "serde")]
+  #[test]
+  fn search_response_round_trips_through_serde() {
+    let response = SearchResponse {
+      username: "bob".into(),
+      token: 3,
+      files: vec![
+        mp3("@@share\\artist\\01 intro.mp3"),
+        File {
+          filename: crate::RemoteFilename::from_bytes(b"@@share\\caf\xe9.flac".to_vec()),
+          ..flac("")
+        },
+      ],
+      has_free_upload_slot: true,
+      upload_speed: 51_200,
+      queue_length: 4,
+      locked_files: vec![flac("@@share\\locked\\x.flac")],
+    };
+    let json = serde_json::to_value(&response).unwrap();
+    assert_eq!(
+      json["files"][0],
+      serde_json::json!({
+        "code": 1,
+        "filename": "@@share\\artist\\01 intro.mp3",
+        "size": 5_242_880,
+        "extension": "mp3",
+        "attributes": [
+          { "attribute_type": "BitRate", "value": 320 },
+          { "attribute_type": "Duration", "value": 245 },
+          { "attribute_type": "VariableBitRate", "value": 0 },
+        ],
+      })
+    );
+    assert_eq!(
+      json["files"][1]["attributes"][3],
+      serde_json::json!({ "attribute_type": { "Unknown": 3 }, "value": 9 })
+    );
+    assert_eq!(
+      serde_json::from_value::<SearchResponse>(json).unwrap(),
+      response
     );
   }
 }

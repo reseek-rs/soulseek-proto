@@ -27,6 +27,7 @@ wire_struct! {
 /// In search responses, `filename` is the full remote path. In browse and folder responses, it is
 /// the bare name within its directory.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct File {
   /// Kept as received and written back unchanged.
@@ -169,6 +170,7 @@ pub(super) fn read_files(r: &mut Reader, field: &'static str) -> Result<Vec<File
 
 /// Shared directory and the files directly within it.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct Directory {
   /// Full remote path, with the peer's separator.
@@ -212,6 +214,7 @@ fn read_directories(r: &mut Reader, field: &'static str) -> Result<Vec<Directory
 /// Peer code 5. Sent by the peer in reply to
 /// [`BrowseRequest`](super::PeerMessage::BrowseRequest). Compressed with zlib.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct BrowseResponse {
   #[cfg_attr(
@@ -279,6 +282,7 @@ wire_struct! {
 ///
 /// Peer code 37. Sent in reply to a [`FolderContentsRequest`]. Compressed with zlib.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct FolderContentsResponse {
   pub token: u32,

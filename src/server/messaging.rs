@@ -20,6 +20,7 @@ wire_struct! {
 /// Server code 22. Sent by the server, live or replayed from the server's offline store until the
 /// client acknowledges it.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct PrivateMessageResponse {
   /// Identifier to acknowledge with [`AcknowledgePrivateMessage`].

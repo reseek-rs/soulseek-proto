@@ -48,6 +48,7 @@ wire_struct! {
 /// Server code 14. Sent by the server when the client joins a room, with the owner and operators
 /// of a private room.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct RoomData {
   pub name: String,
@@ -190,6 +191,7 @@ wire_struct! {
 /// Server code 16. Sent by the server for a room the client is in, including when the client
 /// itself joins.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserJoinedRoom {
   pub room: String,
@@ -262,6 +264,7 @@ wire_struct! {
 
 /// One entry of [`RoomList`].
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct RoomInfo {
   pub name: String,
@@ -301,6 +304,7 @@ fn write_room_block(w: &mut Writer, rooms: &[RoomInfo]) {
 /// Server code 64. Sent by the server after login and in reply to a room list request. Holds the
 /// public rooms, and the private rooms the client owns, is a member of and operates.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct RoomList {
   pub public: Vec<RoomInfo>,

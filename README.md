@@ -53,6 +53,12 @@ Each connection type has an enum of its messages. `encode` writes one complete f
 
 Decoders enforce the sizes in `Limits` and log through `tracing`.
 
+## Features
+
+`serde`, off by default, implements `Serialize` and `Deserialize` for the message structs and the
+data model, such as `File`, `SearchResponse`, `UserData`, `RoomList` and `RemoteFilename`. The
+message family enums, the frame types and anything that holds a password are left out.
+
 ## License
 
 Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT)

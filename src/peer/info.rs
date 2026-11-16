@@ -12,6 +12,7 @@ use crate::wire::{Reader, Writer};
 /// Peer code 16. Sent by the peer in reply to
 /// [`InfoRequest`](super::PeerMessage::InfoRequest).
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserInfo {
   pub description: String,

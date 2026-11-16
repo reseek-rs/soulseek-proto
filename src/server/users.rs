@@ -15,6 +15,7 @@ use crate::wire::{Reader, Writer};
 ///
 /// Carried by [`WatchUserResponse`], [`UserStatistics`] and the room messages.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserStats {
   /// Speed of recent uploads in bytes per second.
@@ -57,6 +58,7 @@ impl Wire for UserStats {
 /// [`GlobalUserListResponse`](super::GlobalUserListResponse). Those messages always carry
 /// `slots_full` and `country_code`.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct UserData {
   pub username: String,
@@ -81,6 +83,7 @@ wire_struct! {
 ///
 /// Server code 3. Sent by the server. The address is `0.0.0.0` when the user is offline.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct GetPeerAddressResponse {
   pub username: String,
@@ -140,6 +143,7 @@ wire_struct! {
 ///
 /// Server code 5. Sent by the server, with the user's status and statistics if the user exists.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct WatchUserResponse {
   pub username: String,
@@ -185,6 +189,7 @@ impl Wire for WatchUserResponse {
 ///
 /// Carried by [`WatchUserResponse`] for a user that exists.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct WatchedUser {
   pub status: UserPresence,

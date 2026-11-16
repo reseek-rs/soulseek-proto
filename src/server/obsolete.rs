@@ -29,6 +29,7 @@ wire_struct! {
 ///
 /// Obsolete: no client sends this message.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct QueuedDownloadsRequest {
   pub slots_full: bool,
@@ -54,6 +55,7 @@ impl Wire for QueuedDownloadsRequest {
 ///
 /// Obsolete: the server no longer sends this message.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct QueuedDownloadsResponse {
   pub username: String,
@@ -124,6 +126,7 @@ wire_struct! {
 ///
 /// Obsolete: no longer served.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct GlobalUserListResponse {
   pub users: Vec<UserData>,

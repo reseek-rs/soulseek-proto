@@ -25,6 +25,7 @@ wire_struct! {
 ///
 /// Deprecated: never sent.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct ParentsIP {
   pub ip: Option<Ipv4Addr>,
