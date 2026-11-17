@@ -5,12 +5,8 @@
 [![ci](https://github.com/reseek-rs/soulseek-proto/actions/workflows/ci.yml/badge.svg)](https://github.com/reseek-rs/soulseek-proto/actions/workflows/ci.yml)
 [![license](https://img.shields.io/crates/l/soulseek-proto)](#license)
 
-An implementation of the Soulseek wire protocol as Rust types: every server, peer, distributed and
-peer-init message with its encoder and decoder, the frame codec, decode limits and the data model.
-
-The crate performs no I/O and has no async runtime. Bytes are decoded into messages and messages
-are encoded into bytes; connection handling, login, search and transfer logic are left to the
-caller. A client built on this crate is
+Encoders and decoders for every message of the Soulseek wire protocol, with the frame codec, decode
+limits and the data model. A client built on it is
 [`soulseek-client`](https://github.com/reseek-rs/soulseek-client).
 
 ## Usage
@@ -39,10 +35,7 @@ fn main() -> Result<(), DecodeError> {
 }
 ```
 
-## Message families
-
-Each connection type has an enum of its messages. `encode` writes one complete frame, and
-`decode` reads exactly one.
+## Messages
 
 | Enum                              | Connection                                               |
 | --------------------------------- | -------------------------------------------------------- |
@@ -51,13 +44,19 @@ Each connection type has an enum of its messages. `encode` writes one complete f
 | `DistributedMessage`              | Distributed (`D`) connections in the search tree         |
 | `InitMessage`                     | The first frame on an inbound `P`, `F` or `D` connection |
 
-Decoders enforce the sizes in `Limits` and log through `tracing`.
+- `encode` writes one complete frame, and `decode` reads exactly one
+- `decode` enforces `Limits::DEFAULT`; `PeerMessage::decode_with` takes other limits
+- Decoders log through `tracing`
 
 ## Features
 
-`serde`, off by default, implements `Serialize` and `Deserialize` for the message structs and the
-data model, such as `File`, `SearchResponse`, `UserData`, `RoomList` and `RemoteFilename`. The
-message family enums, the frame types and anything that holds a password are left out.
+| Feature | Default | Description                                                          |
+| ------- | ------- | -------------------------------------------------------------------- |
+| `serde` | Off     | `Serialize` and `Deserialize` for the message structs and data model |
+
+- The data model includes `File`, `SearchResponse`, `UserData`, `RoomList` and `RemoteFilename`
+- The message family enums, the frame types and anything that holds a password have no
+  implementations
 
 ## License
 
