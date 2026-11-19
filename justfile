@@ -20,8 +20,13 @@ msrv:
     CARGO_TARGET_DIR=target/msrv nix develop .#msrv -c cargo build --locked
     CARGO_TARGET_DIR=target/msrv nix develop .#msrv -c cargo build --locked --all-features
 
+# fails when a committed Cargo.lock does not match its manifest; the other recipes would
+# rewrite it and pass
+locked:
+    cargo metadata --locked --format-version 1 > /dev/null
+
 # the gate for every push; ci.yml runs it
-ci: lint test msrv
+ci: locked lint test msrv
 
 # package and build the crate as crates.io would, without uploading; release.yml runs it
 publish-check:
