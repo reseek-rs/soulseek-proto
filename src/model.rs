@@ -124,7 +124,10 @@ pub enum FileAttributeType {
 }
 
 impl FileAttributeType {
-  pub(crate) fn from_u32(value: u32) -> Self {
+  /// Returns the type a wire value names.
+  ///
+  /// A value with no variant of its own is [`Unknown`](Self::Unknown).
+  pub fn from_u32(value: u32) -> Self {
     match value {
       0 => Self::BitRate,
       1 => Self::Duration,
@@ -135,7 +138,8 @@ impl FileAttributeType {
     }
   }
 
-  pub(crate) fn to_u32(self) -> u32 {
+  /// Returns the value of the type on the wire.
+  pub fn to_u32(self) -> u32 {
     match self {
       Self::BitRate => 0,
       Self::Duration => 1,
